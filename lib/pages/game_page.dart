@@ -47,6 +47,8 @@ class _GamePageState extends State<GamePage> {
 
   bool isDialogOpen = false;
 
+  GameMode mode = GameMode.play; // default
+
   void buttonTapped(String button) {
     setState(() {
       if (button == 'C') {
@@ -92,7 +94,7 @@ class _GamePageState extends State<GamePage> {
               icon: Icons.arrow_forward,
             );
           });
-      score++;
+      if (mode != GameMode.practice) score++;
     } else {
       showDialog(
           context: context,
@@ -103,8 +105,13 @@ class _GamePageState extends State<GamePage> {
               icon: Icons.rotate_left,
             );
           });
-      if(remainingMistakes == 1) gameOver();
-      remainingMistakes--;
+      if (mode != GameMode.practice) {
+        if(remainingMistakes == 1){
+          timerStream = Stream.empty();
+          gameOver();
+        }
+        remainingMistakes--;
+      }
     }
   }
 
@@ -126,7 +133,9 @@ class _GamePageState extends State<GamePage> {
   }
 
   void gameEnd(){
+    if (mode != GameMode.practice) {
       HighScore(username: "You", score: score).save();
+    }
   }
 
   var randomNumber = Random();
@@ -163,10 +172,25 @@ class _GamePageState extends State<GamePage> {
   void initState() {
     super.initState();
     BackButtonInterceptor.add(myInterceptor);
-    timerStream = Stream.periodic(const Duration(seconds: 1), (x) => x).take(secondsLeft);
-    numberA = randomNumber.nextInt(10);
-    numberB = randomNumber.nextInt(10);
-    operation = MathOperation.values[randomNumber.nextInt(MathOperation.values.length)];
+
+    // Delay to get context for ModalRoute
+    Future.microtask(() {
+      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      if (args != null && args['mode'] != null && args['mode'] is GameMode) {
+        setState(() {
+          mode = args['mode'] as GameMode;
+        });
+      }
+      if (mode == GameMode.practice) {
+        remainingMistakes = 9999;
+        timerStream = Stream.empty();
+      } else {
+        timerStream = Stream.periodic(const Duration(seconds: 1), (x) => x).take(secondsLeft);
+      }
+      numberA = randomNumber.nextInt(10);
+      numberB = randomNumber.nextInt(10);
+      operation = MathOperation.values[randomNumber.nextInt(MathOperation.values.length)];
+    });
   }
 
   Widget build(BuildContext context) {
@@ -179,29 +203,54 @@ class _GamePageState extends State<GamePage> {
               height: 160,
               color: Colors.deepPurple,
               child: Center(
-                child: StreamBuilder<int>(
-                  stream: timerStream,
-                  builder: (context, snapshot) {
-                    return Row(
+                child: mode == GameMode.practice
+                  ? Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        topBarElement(buildRemainingTimeText(snapshot.data), Icons.timer, Colors.white70),
                         topBarElement(
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 300),
-                            transitionBuilder: (child, animation) {
-                              return SlideTransition(
-                                position: Tween<Offset>(
-                                begin: const Offset(0, -1.5), // New text starts from above
-                                end: const Offset(0, 0),   // Current text moves downward
-                                ).animate(animation),
-                                child: child,
-                              );},
-                              child: Text(
-                                remainingMistakes.toString(),
-                                key: ValueKey<int>(remainingMistakes),
-                                style: whiteBoldedText.copyWith(color: Colors.white), // Ensure text color is visible
-                              )
+                          Text('∞', style: whiteBoldedText),
+                          Icons.cancel,
+                          Colors.redAccent,
+                        ),
+                        topBarElement(
+                          Text('-', style: whiteBoldedText),
+                          Icons.star,
+                          Colors.yellow,
+                        ),
+                      ],
+                    )
+                  : StreamBuilder<int>(
+                      stream: timerStream,
+                      builder: (context, snapshot) {
+                        // Check if the timer has ended
+                        if (snapshot.hasData && snapshot.data == secondsLeft - 1) {
+                          // End the game if time is up
+                          Future.microtask(() {
+                            // if (Navigator.canPop(context)) Navigator.of(context).popUntil((route) => route.isFirst);
+                            gameOver();
+                          });
+                        }
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            topBarElement(buildRemainingTimeText(snapshot.data), Icons.timer, Colors.white70),
+                            topBarElement(
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 300),
+                                transitionBuilder: (child, animation) {
+                                  return SlideTransition(
+                                    position: Tween<Offset>(
+                                      begin: const Offset(0, -1.5),
+                                      end: const Offset(0, 0),
+                                    ).animate(animation),
+                                    child: child,
+                                  );
+                                },
+                                  child: Text(
+                                    remainingMistakes.toString(),
+                                    key: ValueKey<int>(remainingMistakes),
+                                  style: whiteBoldedText.copyWith(color: Colors.white),
+                                  )
                           ),
                           Icons.cancel,
                           Colors.redAccent,
@@ -250,8 +299,7 @@ class _GamePageState extends State<GamePage> {
                               )
                             ],
                           ),
-                          Text('Give the result without remainder', style: greyTextStyle.copyWith(fontSize: 18)),
-                        ],
+                          if (operation == MathOperation.divide) Text('Give the result without remainder', style: greyTextStyle),]
                       ),
                     ))),
             Expanded(
@@ -321,8 +369,7 @@ class _GamePageState extends State<GamePage> {
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-                Navigator.of(context).maybePop(); // Exit the page
+                Navigator.pushNamed(context, '/home');
               },
               child: const Text("Exit"),
             ),

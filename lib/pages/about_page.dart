@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AboutPage extends StatefulWidget {
   const AboutPage({super.key});
@@ -9,11 +11,12 @@ class AboutPage extends StatefulWidget {
 }
 
 class _AboutPageState extends State<AboutPage> {
-@override
-void initState() {
-  super.initState();
-  _loadAppInfo();
-}
+  @override
+  void initState() {
+    super.initState();
+    _loadAppInfo();
+  }
+
   String appVersion = '';
 
   Future<void> _loadAppInfo() async {
@@ -27,7 +30,6 @@ void initState() {
     setState(() {
       appVersion = 'Version: $version (Build $buildNumber)';
     });
-
   }
 
   @override
@@ -42,7 +44,7 @@ void initState() {
           children: [
             const CircleAvatar(
               radius: 50,
-              backgroundImage: AssetImage('assets/images/logo.png'), // Ensure you have a logo image in assets
+              backgroundImage: AssetImage('assets/images/logo.png'),
             ),
             const Text(
               'Matem Appka',
@@ -53,23 +55,46 @@ void initState() {
               appVersion,
               style: TextStyle(fontSize: 16),
             ),
-            Row( mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-              const Text(
-                'Developed by: ',
-                style: TextStyle(fontSize: 16),
-              ),
-              const Text(
-                'Marcin Przybył',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ]),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'Developed by: ',
+                  style: TextStyle(fontSize: 16),
+                ),
+                const Text(
+                  'Marcin Przybył',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
+            InkWell(
+              onTap: () async {
+                const url = 'https://github.com/marp';
+                if (!await launchUrl(
+                    Uri.parse(url), mode: LaunchMode.inAppBrowserView)) {
+                  throw Exception('Could not launch $url');
+                }
               },
-              child: const Text('Back'),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SvgPicture.asset(
+                    'assets/images/github-mark.svg',
+                    width: 24,
+                    height: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Source Code on GitHub',
+                    style: TextStyle(
+                        fontSize: 16,
+                        decoration: TextDecoration.underline,
+                        color: Colors.blue),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -77,4 +102,3 @@ void initState() {
     );
   }
 }
-

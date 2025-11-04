@@ -25,7 +25,7 @@ var whiteBoldedText = const TextStyle(
 var greyTextStyle = const TextStyle(
     fontWeight: FontWeight.bold,
     fontSize: 18,
-    color: Colors.white10
+    color: Colors.white70
 );
 
 enum MathOperation { add, subtract, multiply, divide }
@@ -35,4 +35,14 @@ const mathOperations = {
   MathOperation.subtract: '-',
   MathOperation.multiply: '×',
   MathOperation.divide: '÷',
+};
+
+// Game modes
+enum GameMode { play, timetrial, practice, passplay }
+
+const gameModeNames = {
+  GameMode.play: 'Play',
+  GameMode.timetrial: 'Time Trial',
+  GameMode.practice: 'Practice',
+  GameMode.passplay: 'Pass & Play',
 };

@@ -3,6 +3,7 @@ import 'package:matem_appka/pages/about_page.dart';
 import 'package:matem_appka/pages/game_page.dart';
 import 'package:matem_appka/pages/highscores_page.dart';
 import 'package:matem_appka/pages/home_page.dart';
+import 'package:matem_appka/pages/settings_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -41,6 +42,7 @@ class MyApp extends StatelessWidget {
         '/game': (context) => const GamePage(),
         '/about': (context) => const AboutPage(),
         '/highScores': (context) => const HighScoresPage(),
+        '/settings': (context) => const SettingsPage(),
       },
     );
   }

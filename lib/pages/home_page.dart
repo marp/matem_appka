@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../const.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -91,7 +92,9 @@ class _HomePageState extends State<HomePage> {
                   }),
                   // circButton(Icons.lightbulb, () {
                   // }),
-                  // circButton(Icons.settings, () => {}),
+                  circButton(Icons.settings, () {
+                    Navigator.pushNamed(context, '/settings');
+                  }),
                 ],
               ),
               Wrap(
@@ -104,7 +107,7 @@ class _HomePageState extends State<HomePage> {
                     Color(0xFF2F80ED),
                     width,
                     () {
-                      Navigator.pushNamed(context, '/game');
+                      Navigator.pushNamed(context, '/game', arguments: {'mode': GameMode.play});
                     },
                   ),
                   modeButton(
@@ -113,7 +116,9 @@ class _HomePageState extends State<HomePage> {
                     Icons.timer_outlined,
                     Color(0xFFDF1D5A),
                     width,
-                    () {},
+                    () {
+                      Navigator.pushNamed(context, '/game', arguments: {'mode': GameMode.timetrial});
+                    },
                   ),
                   modeButton(
                     'Practice',
@@ -121,7 +126,9 @@ class _HomePageState extends State<HomePage> {
                     Icons.check_circle,
                     Color(0xFF45D280),
                     width,
-                    () {},
+                    () {
+                      Navigator.pushNamed(context, '/game', arguments: {'mode': GameMode.practice});
+                    },
                   ),
                   modeButton(
                     'Pass & Play',
@@ -129,7 +136,9 @@ class _HomePageState extends State<HomePage> {
                     Icons.people,
                     Color(0xFFFF8306),
                     width,
-                    () {},
+                    () {
+                      Navigator.pushNamed(context, '/game', arguments: {'mode': GameMode.passplay});
+                    },
                   ),
                 ],
               ),
