@@ -96,6 +96,52 @@ class _AboutPageState extends State<AboutPage> {
                 ],
               ),
             ),
+            const SizedBox(height: 20),
+            Wrap(
+              alignment: WrapAlignment.center,
+              children: [
+                const Text(
+                  'Music by ',
+                  style: TextStyle(fontSize: 14),
+                ),
+                InkWell(
+                  onTap: () async {
+                    const url = 'https://pixabay.com/users/roshan_cariappa-29316619/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=117375';
+                    if (!await launchUrl(Uri.parse(url), mode: LaunchMode.inAppBrowserView)) {
+                      throw Exception('Could not launch $url');
+                    }
+                  },
+                  child: const Text(
+                    'Roshan Cariappa',
+                    style: TextStyle(
+                      fontSize: 14,
+                      decoration: TextDecoration.underline,
+                      color: Colors.blue,
+                    ),
+                  ),
+                ),
+                const Text(
+                  ' from ',
+                  style: TextStyle(fontSize: 14),
+                ),
+                InkWell(
+                  onTap: () async {
+                    const url = 'https://pixabay.com/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=117375';
+                    if (!await launchUrl(Uri.parse(url), mode: LaunchMode.inAppBrowserView)) {
+                      throw Exception('Could not launch $url');
+                    }
+                  },
+                  child: const Text(
+                    'Pixabay',
+                    style: TextStyle(
+                      fontSize: 14,
+                      decoration: TextDecoration.underline,
+                      color: Colors.blue,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),

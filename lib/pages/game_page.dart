@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:matem_appka/const.dart';
 import 'package:matem_appka/util/my_button.dart';
 import 'package:matem_appka/util/result_message.dart';
+import 'package:matem_appka/util/audio_service.dart';
 
 import '../model/highscore.dart';
 
@@ -84,6 +85,7 @@ class _GamePageState extends State<GamePage> {
 
   void checkResult() {
     if (_calculateResult(numberA, numberB, operation) == int.tryParse(userAnswer)) {
+      AudioService().playCorrectSound();
       showDialog(
           context: context,
           barrierDismissible: false,
@@ -96,6 +98,7 @@ class _GamePageState extends State<GamePage> {
           });
       if (mode != GameMode.practice) score++;
     } else {
+      AudioService().playIncorrectSound();
       showDialog(
           context: context,
           builder: (context) {
@@ -116,6 +119,8 @@ class _GamePageState extends State<GamePage> {
   }
 
   void gameOver(){
+    // Play game over sound when the game ends
+    AudioService().playGameOverSound();
     showDialog(
         context: context,
       barrierDismissible: false,
@@ -185,7 +190,9 @@ class _GamePageState extends State<GamePage> {
         remainingMistakes = 9999;
         timerStream = Stream.empty();
       } else {
+        // Start the timer and play countdown sound for timed mode
         timerStream = Stream.periodic(const Duration(seconds: 1), (x) => x).take(secondsLeft);
+        AudioService().playCountdownSound();
       }
       numberA = randomNumber.nextInt(10);
       numberB = randomNumber.nextInt(10);

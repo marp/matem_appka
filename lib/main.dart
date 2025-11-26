@@ -4,8 +4,12 @@ import 'package:matem_appka/pages/game_page.dart';
 import 'package:matem_appka/pages/highscores_page.dart';
 import 'package:matem_appka/pages/home_page.dart';
 import 'package:matem_appka/pages/settings_page.dart';
+import 'package:matem_appka/util/audio_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AudioService().initialize();
+  await AudioService().playBackgroundMusic();
   runApp(const MyApp());
 }
 

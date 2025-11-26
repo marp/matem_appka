@@ -1,7 +1,5 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:matem_appka/util/audio_service.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -14,10 +12,17 @@ class _SettingsPageState extends State<SettingsPage> {
   bool isMusicEnabled = true;
   bool isSoundEffectsEnabled = true;
 
+  Future<void> _loadSettings() async {
+    final audioService = AudioService();
+    setState(() {
+      isMusicEnabled = audioService.isMusicEnabled;
+      isSoundEffectsEnabled = audioService.isSoundEffectsEnabled;
+    });
+  }
   @override
   void initState() {
     super.initState();
-    // TODO: Load saved settings from persistent storage if needed
+    _loadSettings();
   }
 
   @override
@@ -40,21 +45,21 @@ class _SettingsPageState extends State<SettingsPage> {
             SwitchListTile(
               title: const Text('Music'),
               value: isMusicEnabled,
-              onChanged: (value) {
+              onChanged: (value) async {
                 setState(() {
                   isMusicEnabled = value;
-                  // TODO: Add logic to enable/disable music
                 });
+                await AudioService().setMusicEnabled(value);
               },
             ),
             SwitchListTile(
               title: const Text('Sound Effects'),
               value: isSoundEffectsEnabled,
-              onChanged: (value) {
+              onChanged: (value) async {
                 setState(() {
                   isSoundEffectsEnabled = value;
-                  // TODO: Add logic to enable/disable sound effects
                 });
+                await AudioService().setSoundEffectsEnabled(value);
               },
             ),
           ],
