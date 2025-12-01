@@ -21,9 +21,8 @@ class AudioService {
     _isMusicEnabled = prefs.getBool('musicEnabled') ?? true;
     _isSoundEffectsEnabled = prefs.getBool('soundEffectsEnabled') ?? true;
 
-    // Ustaw muzykę w trybie pętli
     await _musicPlayer.setReleaseMode(ReleaseMode.loop);
-    await _musicPlayer.setVolume(0.3); // 30% głośności dla muzyki w tle
+    await _musicPlayer.setVolume(0.3);
   }
 
   Future<void> playBackgroundMusic() async {
@@ -77,7 +76,6 @@ class AudioService {
   Future<void> _playEffect(String relativeAssetPath) async {
     if (!_isSoundEffectsEnabled) return;
     try {
-      // relativeAssetPath jest ścieżką względem katalogu assets/, np. "sounds/...mp3"
       await _effectsPlayer.stop();
       await _effectsPlayer.play(AssetSource(relativeAssetPath));
     } catch (e) {
@@ -86,27 +84,22 @@ class AudioService {
   }
 
   Future<void> playCorrectSound() async {
-    // Poprawna odpowiedź
     await _playEffect('sounds/the-correct-answer-33-183620.mp3');
   }
 
   Future<void> playIncorrectSound() async {
-    // Błędna odpowiedź
     await _playEffect('sounds/wrong-answer-21-199825.mp3');
   }
 
   Future<void> playButtonClickSound() async {
-    // Kliknięcie przycisku
     await _playEffect('sounds/new-message-31-183617.mp3');
   }
 
   Future<void> playCountdownSound() async {
-    // Odliczanie czasu
     await _playEffect('sounds/game-countdown-62-199828.mp3');
   }
 
   Future<void> playGameOverSound() async {
-    // Koniec gry
     await _playEffect('sounds/game-over-39-199830.mp3');
   }
 

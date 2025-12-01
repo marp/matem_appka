@@ -42,9 +42,10 @@ class _AboutPageState extends State<AboutPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const CircleAvatar(
-              radius: 50,
-              backgroundImage: AssetImage('assets/images/logo.png'),
+            Image.asset(
+              'assets/images/logo.png',
+              width: 100,
+              height: 100,
             ),
             const Text(
               'Matem Appka',
@@ -120,19 +121,25 @@ class _AboutPageState extends State<AboutPage> {
                     ),
                   ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Wrap(
+              alignment: WrapAlignment.center,
+              children: [
                 const Text(
-                  ' from ',
+                  'Sounds by ',
                   style: TextStyle(fontSize: 14),
                 ),
                 InkWell(
                   onTap: () async {
-                    const url = 'https://pixabay.com/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=117375';
+                    const url = 'https://pixabay.com/users/tuomas_data-40753689/';
                     if (!await launchUrl(Uri.parse(url), mode: LaunchMode.inAppBrowserView)) {
                       throw Exception('Could not launch $url');
                     }
                   },
                   child: const Text(
-                    'Pixabay',
+                    'Tuomas_Data',
                     style: TextStyle(
                       fontSize: 14,
                       decoration: TextDecoration.underline,

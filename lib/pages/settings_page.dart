@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:matem_appka/util/audio_service.dart';
+import 'package:matem_appka/util/xp_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -19,10 +21,72 @@ class _SettingsPageState extends State<SettingsPage> {
       isSoundEffectsEnabled = audioService.isSoundEffectsEnabled;
     });
   }
+
   @override
   void initState() {
     super.initState();
     _loadSettings();
+  }
+
+  Future<void> _resetScores() async {
+    final shouldReset = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Reset scoreboard'),
+          content: const Text('Are you sure you want to clear all high scores? This cannot be undone.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Reset'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldReset == true) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('highscores');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('High scores have been reset.')),
+      );
+    }
+  }
+
+  Future<void> _resetXp() async {
+    final shouldReset = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Reset XP'),
+          content: const Text('Are you sure you want to reset your experience points?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Reset'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldReset == true) {
+      await XpService().resetXp();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('XP has been reset.')),
+      );
+    }
   }
 
   @override
@@ -61,6 +125,24 @@ class _SettingsPageState extends State<SettingsPage> {
                 });
                 await AudioService().setSoundEffectsEnabled(value);
               },
+            ),
+            const SizedBox(height: 24),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.refresh, color: Colors.redAccent),
+              title: const Text('Reset scoreboard'),
+              subtitle: const Text('Clear all saved high scores'),
+              textColor: Colors.redAccent,
+              iconColor: Colors.redAccent,
+              onTap: _resetScores,
+            ),
+            ListTile(
+              leading: const Icon(Icons.star_outline, color: Colors.orangeAccent),
+              title: const Text('Reset XP'),
+              subtitle: const Text('Reset your experience points'),
+              textColor: Colors.orangeAccent,
+              iconColor: Colors.orangeAccent,
+              onTap: _resetXp,
             ),
           ],
         ),

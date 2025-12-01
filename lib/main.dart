@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:matem_appka/pages/about_page.dart';
+import 'package:matem_appka/pages/activity_page.dart';
 import 'package:matem_appka/pages/game_page.dart';
 import 'package:matem_appka/pages/highscores_page.dart';
 import 'package:matem_appka/pages/home_page.dart';
 import 'package:matem_appka/pages/settings_page.dart';
 import 'package:matem_appka/util/audio_service.dart';
+import 'package:matem_appka/util/streak_service.dart';
+import 'package:matem_appka/util/xp_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AudioService().initialize();
   await AudioService().playBackgroundMusic();
+  await StreakService().initialize();
+  await XpService().initialize();
   runApp(const MyApp());
 }
 
@@ -47,6 +52,7 @@ class MyApp extends StatelessWidget {
         '/about': (context) => const AboutPage(),
         '/highScores': (context) => const HighScoresPage(),
         '/settings': (context) => const SettingsPage(),
+        '/activity': (context) => const ActivityPage()
       },
     );
   }

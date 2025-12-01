@@ -58,20 +58,6 @@ class _HighScoresPageState extends State<HighScoresPage> {
               ),
             ),
             const SizedBox(height: 16),
-            Center(
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  setState(() {
-                    highScores.clear();
-                  });
-                  SharedPreferences.getInstance().then((prefs) {
-                    prefs.remove('highscores');
-                  });
-                },
-                icon: const Icon(Icons.refresh),
-                label: const Text('Reset Scores'),
-              ),
-            ),
           ],
         ),
       ),

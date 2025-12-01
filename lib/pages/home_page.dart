@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../const.dart';
+import '../util/streak_service.dart';
+import '../util/xp_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -10,6 +12,26 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  int _currentStreak = 0;
+  int _bestStreak = 0;
+  int _currentXp = 0;
+  bool _isStreakPressed = false;
+  @override
+  void initState() {
+    super.initState();
+    _loadStats();
+  }
+
+  Future<void> _loadStats() async {
+    final streakService = StreakService();
+    final xpService = XpService();
+    setState(() {
+      _currentStreak = streakService.currentStreak;
+      _bestStreak = streakService.bestStreak;
+      _currentXp = xpService.currentXp;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width - 80;
@@ -78,6 +100,83 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 64),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                      spacing: 16,
+                      children: [
+                    GestureDetector(
+                      onTapDown: (_) {
+                        setState(() {
+                          _isStreakPressed = true;
+                        });
+                      },
+                      onTapUp: (_) {
+                        setState(() {
+                          _isStreakPressed = false;
+                        });
+                        Navigator.pushNamed(context, '/activity');
+                      },
+                      onTapCancel: () {
+                        setState(() {
+                          _isStreakPressed = false;
+                        });
+                      },
+                      child: AnimatedScale(
+                        scale: _isStreakPressed ? 0.95 : 1.0,
+                        duration: const Duration(milliseconds: 120),
+                        curve: Curves.easeOut,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.orangeAccent,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.whatshot, color: Colors.white, size: 18),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Streak: $_currentStreak days',
+                              style: const TextStyle(
+                                fontFamily: 'Manrope',
+                                fontWeight: FontWeight.bold,
+                                decoration: TextDecoration.none,
+                                fontSize: 14,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.blueAccent,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.star_border, color: Colors.white, size: 18),
+                          const SizedBox(width: 6),
+                          Text(
+                            'XP: $_currentXp',
+                            style: const TextStyle(
+                              fontFamily: 'Manrope',
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.none,
+                              fontSize: 14,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ]),
                 ],
               ),
               Row(
