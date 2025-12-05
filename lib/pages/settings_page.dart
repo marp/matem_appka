@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:matem_appka/util/audio_service.dart';
 import 'package:matem_appka/util/xp_service.dart';
+import 'package:matem_appka/util/activity_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -64,8 +65,9 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Reset XP'),
-          content: const Text('Are you sure you want to reset your experience points?'),
+          title: const Text('Reset XP & Activity'),
+          content: const Text(
+              'Are you sure you want to reset your experience points and activity history?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -82,9 +84,10 @@ class _SettingsPageState extends State<SettingsPage> {
 
     if (shouldReset == true) {
       await XpService().resetXp();
+      await ActivityService().resetSessions();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('XP has been reset.')),
+        const SnackBar(content: Text('XP and activity history have been reset.')),
       );
     }
   }
@@ -137,9 +140,11 @@ class _SettingsPageState extends State<SettingsPage> {
               onTap: _resetScores,
             ),
             ListTile(
-              leading: const Icon(Icons.star_outline, color: Colors.orangeAccent),
-              title: const Text('Reset XP'),
-              subtitle: const Text('Reset your experience points'),
+              leading:
+                  const Icon(Icons.star_outline, color: Colors.orangeAccent),
+              title: const Text('Reset XP & activity'),
+              subtitle:
+                  const Text('Reset your experience points and activity log'),
               textColor: Colors.orangeAccent,
               iconColor: Colors.orangeAccent,
               onTap: _resetXp,

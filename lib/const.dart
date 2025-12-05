@@ -28,16 +28,17 @@ var greyTextStyle = const TextStyle(
     color: Colors.white70
 );
 
-enum MathOperation { add, subtract, multiply, divide }
+enum MathOperation { add, subtract, multiply, divide, power, root }
 
 const mathOperations = {
   MathOperation.add: '+',
   MathOperation.subtract: '-',
   MathOperation.multiply: '×',
   MathOperation.divide: '÷',
+  MathOperation.power: '^',
+  MathOperation.root: '√',
 };
 
-// Game modes
 enum GameMode { play, timetrial, practice, passplay }
 
 const gameModeNames = {

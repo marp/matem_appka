@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:matem_appka/model/game_session.dart';
+import 'package:matem_appka/util/activity_service.dart';
 
 class ActivityPage extends StatefulWidget {
   const ActivityPage({super.key});
@@ -13,11 +15,39 @@ class _ActivityPageState extends State<ActivityPage> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
+  final ActivityService _activityService = ActivityService();
+
+  Map<DateTime, List<GameSession>> _sessionsByDay = {};
+  List<GameSession> _selectedDaySessions = [];
+  List<double> _weeklyXp = List<double>.filled(7, 0);
+
   @override
   void initState() {
     super.initState();
     _selectedDay = _focusedDay;
+    _loadActivityData();
   }
+
+  Future<void> _loadActivityData() async {
+    final startOfMonth = DateTime(_focusedDay.year, _focusedDay.month, 1);
+    final endOfMonth = DateTime(_focusedDay.year, _focusedDay.month + 1, 0);
+    final byDay = _activityService.sessionsByDayInRange(startOfMonth, endOfMonth);
+    final selected = _selectedDay ?? _focusedDay;
+
+    final sessionsForSelected = _activityService.sessionsForDay(selected);
+    final weeklyXp = _activityService
+        .xpForLast7Days()
+        .map((e) => e.toDouble())
+        .toList(growable: false);
+
+    setState(() {
+      _sessionsByDay = byDay;
+      _selectedDaySessions = sessionsForSelected;
+      _weeklyXp = weeklyXp;
+    });
+  }
+
+  DateTime _dayOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +66,8 @@ class _ActivityPageState extends State<ActivityPage> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
+                  _buildDaySessionsList(),
+                  const SizedBox(height: 8),
                   _buildWeeklyActivityChart(),
                   // const SizedBox(height: 24),
                   // _buildCategoryPieChart(),
@@ -79,14 +111,21 @@ class _ActivityPageState extends State<ActivityPage> {
               shape: BoxShape.circle,
             ),
           ),
+          eventLoader: (day) {
+            final key = _dayOnly(day);
+            return _sessionsByDay[key] ?? const <GameSession>[];
+          },
           onDaySelected: (selectedDay, focusedDay) {
             setState(() {
               _selectedDay = selectedDay;
               _focusedDay = focusedDay;
+              _selectedDaySessions =
+                  _activityService.sessionsForDay(selectedDay);
             });
           },
           onPageChanged: (focusedDay) {
             _focusedDay = focusedDay;
+            _loadActivityData();
           },
         ),
       ),
@@ -94,6 +133,10 @@ class _ActivityPageState extends State<ActivityPage> {
   }
 
   Widget _buildSummaryRow() {
+    final todayXp = _activityService.xpForDay(DateTime.now());
+    final currentStreak = _activityService.currentStreak;
+    final bestStreak = _activityService.bestStreak;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
@@ -101,7 +144,7 @@ class _ActivityPageState extends State<ActivityPage> {
           Expanded(
             child: _buildSummaryCard(
               title: 'XP Earned',
-              value: '8,450',
+              value: '$todayXp',
               subtitle: 'Today',
               color: Colors.blue,
             ),
@@ -109,9 +152,9 @@ class _ActivityPageState extends State<ActivityPage> {
           const SizedBox(width: 8),
           Expanded(
             child: _buildSummaryCard(
-              title: 'Streak',
-              value: '520',
-              subtitle: 'days',
+              title: 'Current Streak',
+              value: '$currentStreak',
+              subtitle: 'Best: $bestStreak days',
               color: Colors.orange,
             ),
           ),
@@ -170,6 +213,10 @@ class _ActivityPageState extends State<ActivityPage> {
   }
 
   Widget _buildWeeklyActivityChart() {
+    final maxY = _weeklyXp.isEmpty
+        ? 10.0
+        : (_weeklyXp.reduce((a, b) => a > b ? a : b) * 1.2).clamp(10.0, 500.0);
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -191,12 +238,13 @@ class _ActivityPageState extends State<ActivityPage> {
                     minX: 0,
                     maxX: 6,
                     minY: 0,
-                    maxY: 12,
+                    maxY: maxY,
                     gridData: FlGridData(show: true),
                     borderData: FlBorderData(show: false),
                     titlesData: FlTitlesData(
                       leftTitles: AxisTitles(
-                        sideTitles: SideTitles(showTitles: true, reservedSize: 30),
+                        sideTitles:
+                            SideTitles(showTitles: true, reservedSize: 30),
                       ),
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
@@ -229,14 +277,10 @@ class _ActivityPageState extends State<ActivityPage> {
                           show: true,
                           color: Colors.blue.withOpacity(0.15),
                         ),
-                        spots: const [
-                          FlSpot(0, 5),
-                          FlSpot(1, 7),
-                          FlSpot(2, 6),
-                          FlSpot(3, 9),
-                          FlSpot(4, 8),
-                          FlSpot(5, 10),
-                          FlSpot(6, 6),
+                        spots: [
+                          for (int i = 0; i < 7; i++)
+                            FlSpot(i.toDouble(),
+                                i < _weeklyXp.length ? _weeklyXp[i] : 0),
                         ],
                       ),
                     ],
@@ -250,68 +294,35 @@ class _ActivityPageState extends State<ActivityPage> {
     );
   }
 
-  /*Widget _buildCategoryPieChart() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: SizedBox(
-          height: 220,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Activity breakdown',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: PieChart(
-                  PieChartData(
-                    sectionsSpace: 2,
-                    centerSpaceRadius: 40,
-                    sections: [
-                      PieChartSectionData(
-                        value: 40,
-                        color: Colors.blue,
-                        title: 'Walk',
-                        radius: 60,
-                        titleStyle: const TextStyle(
-                            fontSize: 11, color: Colors.white),
-                      ),
-                      PieChartSectionData(
-                        value: 30,
-                        color: Colors.green,
-                        title: 'Run',
-                        radius: 55,
-                        titleStyle: const TextStyle(
-                            fontSize: 11, color: Colors.white),
-                      ),
-                      PieChartSectionData(
-                        value: 20,
-                        color: Colors.orange,
-                        title: 'Bike',
-                        radius: 50,
-                        titleStyle: const TextStyle(
-                            fontSize: 11, color: Colors.white),
-                      ),
-                      PieChartSectionData(
-                        value: 10,
-                        color: Colors.purple,
-                        title: 'Other',
-                        radius: 45,
-                        titleStyle: const TextStyle(
-                            fontSize: 11, color: Colors.white),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+  Widget _buildDaySessionsList() {
+    if (_selectedDaySessions.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Text('No games on this day yet.'),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _selectedDaySessions.length,
+          separatorBuilder: (_, __) => const Divider(height: 1),
+          itemBuilder: (context, index) {
+            final s = _selectedDaySessions[index];
+            final time = TimeOfDay.fromDateTime(s.playedAt).format(context);
+            return ListTile(
+              leading: const Icon(Icons.videogame_asset_outlined),
+              title: Text('${s.gameType} · $time'),
+              subtitle: Text('XP: ${s.xpEarned}  •  Score: ${s.score}'),
+            );
+          },
         ),
       ),
     );
-  }*/
+  }
 }

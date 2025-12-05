@@ -103,7 +103,6 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 64),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                      spacing: 16,
                       children: [
                     GestureDetector(
                       onTapDown: (_) {
@@ -151,32 +150,39 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                     ),
-                    ),
+                      ),
+                      const SizedBox(width: 16),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.blueAccent,
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.star_border, color: Colors.white, size: 18),
-                          const SizedBox(width: 6),
-                          Text(
-                            'XP: $_currentXp',
-                            style: const TextStyle(
-                              fontFamily: 'Manrope',
-                              fontWeight: FontWeight.bold,
-                              decoration: TextDecoration.none,
-                              fontSize: 14,
-                              color: Colors.white,
+                      child: GestureDetector(
+                        onLongPress: () {
+                          Navigator.pushNamed(context, '/dev/sessions');
+                        },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.star_border, color: Colors.white, size: 18),
+                            const SizedBox(width: 6),
+                            Text(
+                              'XP: $_currentXp',
+                              style: const TextStyle(
+                                fontFamily: 'Manrope',
+                                fontWeight: FontWeight.bold,
+                                decoration: TextDecoration.none,
+                                fontSize: 14,
+                                color: Colors.white,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                    ]),
+                    ],
+                  ),
                 ],
               ),
               Row(

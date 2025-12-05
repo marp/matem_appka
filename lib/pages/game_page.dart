@@ -7,8 +7,9 @@ import 'package:matem_appka/util/my_button.dart';
 import 'package:matem_appka/util/result_message.dart';
 import 'package:matem_appka/util/audio_service.dart';
 import 'package:matem_appka/util/xp_service.dart';
+import 'package:matem_appka/util/activity_service.dart';
 
-import '../model/highscore.dart';
+import '../model/game_session.dart';
 
 class GamePage extends StatefulWidget {
   const GamePage({super.key});
@@ -140,8 +141,18 @@ class _GamePageState extends State<GamePage> {
 
   void gameEnd() async {
     if (mode != GameMode.practice) {
-      HighScore(username: "You", score: score).save();
+      // HighScore(username: "You", score: score).save();
       await XpService().addXp(score);
+      await ActivityService().addSession(
+        GameSession(
+          playedAt: DateTime.now(),
+          gameType: mode.toString().split('.').last,
+          xpEarned: score,
+          score: score,
+          durationSeconds: 120,
+          mistakes: 3 - remainingMistakes,
+        ),
+      );
     }
   }
 
