@@ -58,14 +58,15 @@ class _ActivityPageState extends State<ActivityPage> {
       body: SafeArea(
         child: Column(
           children: [
-            _buildCalendarCard(),
-            const SizedBox(height: 8),
-            _buildSummaryRow(),
-            const SizedBox(height: 8),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
+            _buildCalendarCard(),
+            const SizedBox(height: 8),
+            _buildSummaryRow(),
+            const SizedBox(height: 8),
+
                   _buildDaySessionsList(),
                   const SizedBox(height: 8),
                   _buildWeeklyActivityChart(),

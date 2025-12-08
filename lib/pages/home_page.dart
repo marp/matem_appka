@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../const.dart';
+import '../const/game.dart';
 import '../util/streak_service.dart';
 import '../util/xp_service.dart';
 

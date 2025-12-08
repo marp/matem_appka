@@ -3,13 +3,14 @@ import 'dart:math';
 import 'package:back_button_interceptor/back_button_interceptor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:matem_appka/const.dart';
+import 'package:matem_appka/const/game.dart';
 import 'package:matem_appka/util/my_button.dart';
 import 'package:matem_appka/util/result_message.dart';
 import 'package:matem_appka/util/audio_service.dart';
 import 'package:matem_appka/util/xp_service.dart';
 import 'package:matem_appka/util/activity_service.dart';
 
+import '../const/colors.dart';
 import '../model/game_session.dart';
 
 class GamePage extends StatefulWidget {

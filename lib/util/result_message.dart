@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../const.dart';
+import '../const/colors.dart';
 
 class ResultMessage extends StatelessWidget {
   final String message;

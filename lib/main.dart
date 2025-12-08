@@ -6,10 +6,10 @@ import 'package:matem_appka/pages/game_page.dart';
 import 'package:matem_appka/pages/highscores_page.dart';
 import 'package:matem_appka/pages/home_page.dart';
 import 'package:matem_appka/pages/settings_page.dart';
-import 'package:matem_appka/util/audio_service.dart';
-import 'package:matem_appka/util/streak_service.dart';
-import 'package:matem_appka/util/xp_service.dart';
-import 'package:matem_appka/util/activity_service.dart';
+import 'package:matem_appka/services/audio_service.dart';
+import 'package:matem_appka/services/streak_service.dart';
+import 'package:matem_appka/services/xp_service.dart';
+import 'package:matem_appka/services/activity_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

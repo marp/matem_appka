@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:matem_appka/model/game_session.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:matem_appka/util/activity_service.dart';
 
 class HighScoresPage extends StatefulWidget {
   const HighScoresPage({super.key});
@@ -24,6 +24,8 @@ class HighScoreGroup {
 }
 
 class _HighScoresPageState extends State<HighScoresPage> {
+  final ActivityService _activityService = ActivityService();
+
   List<HighScoreGroup> _groups = [];
   bool _isLoading = true;
   String? _errorMessage;
@@ -41,14 +43,8 @@ class _HighScoresPageState extends State<HighScoresPage> {
     });
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final String? source = prefs.getString('game_sessions');
-
-      List<GameSession> sessions = [];
-      if (source != null && source.isNotEmpty) {
-        // game_sessions are stored as a JSON-encoded list of GameSession
-        sessions = GameSession.decodeList(source);
-      }
+      // Zakładamy, że ActivityService.initialize() został już wywołany przy starcie aplikacji.
+      final List<GameSession> sessions = _activityService.sessions;
 
       // Group sessions by gameType
       final Map<String, List<GameSession>> byType = {};

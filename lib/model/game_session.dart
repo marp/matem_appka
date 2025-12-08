@@ -1,15 +1,21 @@
 import 'dart:convert';
+import 'package:uuid/uuid.dart';
 
 class GameSession {
   GameSession({
+    String? id,
     required this.playedAt,
     required this.gameType,
     required this.xpEarned,
     required this.score,
     this.durationSeconds,
     this.mistakes,
-  });
+  }) : id = id ?? _newId();
 
+  static final Uuid _uuid = Uuid();
+  static String _newId() => _uuid.v4();
+
+  final String id;
   final DateTime playedAt;
   final String gameType;
   final int xpEarned;
@@ -21,6 +27,7 @@ class GameSession {
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'id': id,
       'playedAt': playedAt.toIso8601String(),
       'gameType': gameType,
       'xpEarned': xpEarned,
@@ -32,6 +39,7 @@ class GameSession {
 
   factory GameSession.fromJson(Map<String, dynamic> json) {
     return GameSession(
+      id: json['id'] as String?,
       playedAt: DateTime.parse(json['playedAt'] as String),
       gameType: json['gameType'] as String,
       xpEarned: (json['xpEarned'] ?? 0) as int,
@@ -52,4 +60,3 @@ class GameSession {
         .toList();
   }
 }
-
