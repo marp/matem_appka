@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:matem_appka/model/game_session.dart';
-import 'package:matem_appka/util/activity_service.dart';
+import 'package:matem_appka/services/activity_service.dart';
 
 class HighScoresPage extends StatefulWidget {
   const HighScoresPage({super.key});

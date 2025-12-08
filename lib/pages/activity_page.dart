@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:matem_appka/model/game_session.dart';
-import 'package:matem_appka/util/activity_service.dart';
+import 'package:matem_appka/services/activity_service.dart';
 
 class ActivityPage extends StatefulWidget {
   const ActivityPage({super.key});
@@ -62,11 +62,10 @@ class _ActivityPageState extends State<ActivityPage> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-            _buildCalendarCard(),
-            const SizedBox(height: 8),
-            _buildSummaryRow(),
-            const SizedBox(height: 8),
-
+                  _buildCalendarCard(),
+                  const SizedBox(height: 4),
+                  _buildSummaryRow(),
+                  const SizedBox(height: 8),
                   _buildDaySessionsList(),
                   const SizedBox(height: 8),
                   _buildWeeklyActivityChart(),
@@ -83,7 +82,7 @@ class _ActivityPageState extends State<ActivityPage> {
 
   Widget _buildCalendarCard() {
     return Card(
-      margin: const EdgeInsets.all(16),
+      margin: EdgeInsets.zero,
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -141,22 +140,25 @@ class _ActivityPageState extends State<ActivityPage> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             child: _buildSummaryCard(
-              title: 'XP Earned',
+              title: 'XP earned today',
               value: '$todayXp',
-              subtitle: 'Today',
+              subtitle: 'Last 7 days shown below',
               color: Colors.blue,
+              icon: Icons.bolt_outlined,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           Expanded(
             child: _buildSummaryCard(
-              title: 'Current Streak',
+              title: 'Current streak',
               value: '$currentStreak',
               subtitle: 'Best: $bestStreak days',
               color: Colors.orange,
+              icon: Icons.local_fire_department_outlined,
             ),
           ),
         ],
@@ -169,38 +171,51 @@ class _ActivityPageState extends State<ActivityPage> {
     required String value,
     required String subtitle,
     required Color color,
+    required IconData icon,
   }) {
+    final theme = Theme.of(context);
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             CircleAvatar(
-              backgroundColor: color.withOpacity(0.1),
-              child: Icon(Icons.trending_up, color: color),
+              radius: 18,
+              backgroundColor: color.withValues(alpha: 0.12),
+              child: Icon(icon, color: color, size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(title,
-                      style: const TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.w500)),
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     value,
-                    style: const TextStyle(
-                      fontSize: 18,
+                    style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      fontSize: 11,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
                       color: Colors.grey.shade600,
                     ),
                   ),
@@ -276,7 +291,7 @@ class _ActivityPageState extends State<ActivityPage> {
                         dotData: FlDotData(show: true),
                         belowBarData: BarAreaData(
                           show: true,
-                          color: Colors.blue.withOpacity(0.15),
+                          color: Colors.blue.withValues(alpha: 0.15),
                         ),
                         spots: [
                           for (int i = 0; i < 7; i++)

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:matem_appka/const/game.dart';
 import 'package:matem_appka/model/game_session.dart';
-import 'package:matem_appka/util/activity_service.dart';
+import 'package:matem_appka/services/activity_service.dart';
 
 class DevSessionsPage extends StatefulWidget {
   const DevSessionsPage({super.key});

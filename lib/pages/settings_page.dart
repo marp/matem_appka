@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:matem_appka/util/audio_service.dart';
-import 'package:matem_appka/util/xp_service.dart';
-import 'package:matem_appka/util/activity_service.dart';
+import 'package:matem_appka/services/audio_service.dart';
+import 'package:matem_appka/services/xp_service.dart';
+import 'package:matem_appka/services/activity_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsPage extends StatefulWidget {

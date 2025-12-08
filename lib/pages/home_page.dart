@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../const/game.dart';
-import '../util/streak_service.dart';
-import '../util/xp_service.dart';
+import '../services/streak_service.dart';
+import '../services/xp_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
