@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:matem_appka/pages/about_page.dart';
 import 'package:matem_appka/pages/activity_page.dart';
+import 'package:matem_appka/pages/dev_index_page.dart';
+import 'package:matem_appka/pages/dev_reminders_page.dart';
 import 'package:matem_appka/pages/dev_sessions_page.dart';
 import 'package:matem_appka/pages/game_page.dart';
 import 'package:matem_appka/pages/highscores_page.dart';
 import 'package:matem_appka/pages/home_page.dart';
 import 'package:matem_appka/pages/settings_page.dart';
+import 'package:matem_appka/pages/welcome_page.dart';
 import 'package:matem_appka/services/audio_service.dart';
 import 'package:matem_appka/services/streak_service.dart';
 import 'package:matem_appka/services/xp_service.dart';
@@ -51,12 +54,15 @@ class MyApp extends StatelessWidget {
       home: const HomePage(),
       routes: {
         '/home': (context) => const HomePage(),
+        '/welcome': (context) => const WelcomePage(),
         '/game': (context) => const GamePage(),
         '/about': (context) => const AboutPage(),
         '/highScores': (context) => const HighScoresPage(),
         '/settings': (context) => const SettingsPage(),
         '/activity': (context) => const ActivityPage(),
+        '/dev/index': (context) => const DevIndexPage(),
         '/dev/sessions': (context) => const DevSessionsPage(),
+        '/dev/reminders': (context) => const DevRemindersPage(),
       },
     );
   }

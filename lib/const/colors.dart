@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+var primaryColor = Colors.indigoAccent;
+var secondaryColor = Colors.amberAccent;
+
 var normalText = const TextStyle(
   fontSize: 18,
   color: Colors.black,

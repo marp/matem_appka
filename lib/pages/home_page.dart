@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../const/game.dart';
 import '../services/streak_service.dart';
 import '../services/xp_service.dart';
@@ -16,10 +18,27 @@ class _HomePageState extends State<HomePage> {
   int _bestStreak = 0;
   int _currentXp = 0;
   bool _isStreakPressed = false;
+
   @override
   void initState() {
     super.initState();
+    _handleFirstLaunchRedirect();
     _loadStats();
+  }
+
+  Future<void> _handleFirstLaunchRedirect() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isFirstLaunch = prefs.getBool('is_first_launch') ?? true;
+
+    if (!isFirstLaunch) return;
+
+    await prefs.setBool('is_first_launch', false);
+
+    // Use microtask to ensure navigation happens after the first build frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.of(context).pushReplacementNamed('/welcome');
+    });
   }
 
   Future<void> _loadStats() async {
@@ -46,6 +65,11 @@ class _HomePageState extends State<HomePage> {
             children: [
               Column(
                 children: [
+                  Image.asset(
+                    'assets/images/logo.png',
+                    width: 100,
+                    height: 100,
+                  ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -66,11 +90,10 @@ class _HomePageState extends State<HomePage> {
                           fontWeight: FontWeight.bold,
                           decoration: TextDecoration.none,
                           fontSize: 42,
-                          foreground:
-                              Paint()
-                                ..color = Colors.white
-                                ..style = PaintingStyle.stroke
-                                ..strokeWidth = 0.1,
+                          foreground: Paint()
+                            ..color = Colors.white
+                            ..style = PaintingStyle.stroke
+                            ..strokeWidth = 0.1,
                         ),
                       ),
                       SizedBox(width: 15),
@@ -91,11 +114,10 @@ class _HomePageState extends State<HomePage> {
                           fontWeight: FontWeight.bold,
                           decoration: TextDecoration.none,
                           fontSize: 42,
-                          foreground:
-                              Paint()
-                                ..color = Colors.white
-                                ..style = PaintingStyle.stroke
-                                ..strokeWidth = 0.5,
+                          foreground: Paint()
+                            ..color = Colors.white
+                            ..style = PaintingStyle.stroke
+                            ..strokeWidth = 0.5,
                         ),
                       ),
                     ],
@@ -103,41 +125,72 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 64),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                    GestureDetector(
-                      onTapDown: (_) {
-                        setState(() {
-                          _isStreakPressed = true;
-                        });
-                      },
-                      onTapUp: (_) {
-                        setState(() {
-                          _isStreakPressed = false;
-                        });
-                        Navigator.pushNamed(context, '/activity');
-                      },
-                      onTapCancel: () {
-                        setState(() {
-                          _isStreakPressed = false;
-                        });
-                      },
-                      child: AnimatedScale(
-                        scale: _isStreakPressed ? 0.95 : 1.0,
-                        duration: const Duration(milliseconds: 120),
-                        curve: Curves.easeOut,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    children: [
+                      GestureDetector(
+                        onTapDown: (_) {
+                          setState(() {
+                            _isStreakPressed = true;
+                          });
+                        },
+                        onTapUp: (_) {
+                          setState(() {
+                            _isStreakPressed = false;
+                          });
+                          Navigator.pushNamed(context, '/activity');
+                        },
+                        onTapCancel: () {
+                          setState(() {
+                            _isStreakPressed = false;
+                          });
+                        },
+                        child: AnimatedScale(
+                          scale: _isStreakPressed ? 0.95 : 1.0,
+                          duration: const Duration(milliseconds: 120),
+                          curve: Curves.easeOut,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.orangeAccent,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.whatshot,
+                                    color: Colors.white, size: 18),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Streak: $_currentStreak days',
+                                  style: const TextStyle(
+                                    fontFamily: 'Manrope',
+                                    fontWeight: FontWeight.bold,
+                                    decoration: TextDecoration.none,
+                                    fontSize: 14,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 6),
                         decoration: BoxDecoration(
-                          color: Colors.orangeAccent,
+                          color: Colors.blueAccent,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.whatshot, color: Colors.white, size: 18),
+                            const Icon(Icons.star_border,
+                                color: Colors.white, size: 18),
                             const SizedBox(width: 6),
                             Text(
-                              'Streak: $_currentStreak days',
+                              'XP: $_currentXp',
                               style: const TextStyle(
                                 fontFamily: 'Manrope',
                                 fontWeight: FontWeight.bold,
@@ -146,37 +199,10 @@ class _HomePageState extends State<HomePage> {
                                 color: Colors.white,
                               ),
                             ),
+                            const SizedBox(width: 4),
                           ],
                         ),
                       ),
-                    ),
-                      ),
-                      const SizedBox(width: 16),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.blueAccent,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.star_border, color: Colors.white, size: 18),
-                          const SizedBox(width: 6),
-                          Text(
-                            'XP: $_currentXp',
-                            style: const TextStyle(
-                              fontFamily: 'Manrope',
-                              fontWeight: FontWeight.bold,
-                              decoration: TextDecoration.none,
-                              fontSize: 14,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                        ],
-                      ),
-                    ),
                     ],
                   ),
                 ],
@@ -197,7 +223,7 @@ class _HomePageState extends State<HomePage> {
                     Navigator.pushNamed(context, '/settings');
                   }),
                   circButton(Icons.bug_report, () {
-                    Navigator.pushNamed(context, '/dev/sessions');
+                    Navigator.pushNamed(context, '/dev/index');
                   }),
                 ],
               ),
@@ -211,7 +237,8 @@ class _HomePageState extends State<HomePage> {
                     Color(0xFF2F80ED),
                     width,
                     () {
-                      Navigator.pushNamed(context, '/game', arguments: {'mode': GameMode.play});
+                      Navigator.pushNamed(context, '/game',
+                          arguments: {'mode': GameMode.play});
                     },
                   ),
                   modeButton(
@@ -221,7 +248,8 @@ class _HomePageState extends State<HomePage> {
                     Color(0xFFDF1D5A),
                     width,
                     () {
-                      Navigator.pushNamed(context, '/game', arguments: {'mode': GameMode.timetrial});
+                      Navigator.pushNamed(context, '/game',
+                          arguments: {'mode': GameMode.timetrial});
                     },
                   ),
                   modeButton(
@@ -231,7 +259,8 @@ class _HomePageState extends State<HomePage> {
                     Color(0xFF45D280),
                     width,
                     () {
-                      Navigator.pushNamed(context, '/game', arguments: {'mode': GameMode.practice});
+                      Navigator.pushNamed(context, '/game',
+                          arguments: {'mode': GameMode.practice});
                     },
                   ),
                   modeButton(
@@ -241,7 +270,8 @@ class _HomePageState extends State<HomePage> {
                     Color(0xFFFF8306),
                     width,
                     () {
-                      Navigator.pushNamed(context, '/game', arguments: {'mode': GameMode.passplay});
+                      Navigator.pushNamed(context, '/game',
+                          arguments: {'mode': GameMode.passplay});
                     },
                   ),
                 ],

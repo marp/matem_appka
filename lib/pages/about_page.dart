@@ -149,6 +149,7 @@ class _AboutPageState extends State<AboutPage> {
                 ),
               ],
             ),
+            const SizedBox(height: 20),
           ],
         ),
       ),

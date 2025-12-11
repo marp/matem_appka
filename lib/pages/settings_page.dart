@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:matem_appka/services/audio_service.dart';
 import 'package:matem_appka/services/xp_service.dart';
 import 'package:matem_appka/services/activity_service.dart';
+import 'package:matem_appka/models/reminder_frequency.dart';
+import 'package:matem_appka/services/notification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -14,12 +16,16 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   bool isMusicEnabled = true;
   bool isSoundEffectsEnabled = true;
+  bool _notificationsEnabled = false;
 
   Future<void> _loadSettings() async {
     final audioService = AudioService();
+    final notificationService = NotificationService();
+    final reminderFrequency = await notificationService.loadReminderFrequency();
     setState(() {
       isMusicEnabled = audioService.isMusicEnabled;
       isSoundEffectsEnabled = audioService.isSoundEffectsEnabled;
+      _notificationsEnabled = reminderFrequency == ReminderFrequency.everyDay;
     });
   }
 
@@ -29,13 +35,14 @@ class _SettingsPageState extends State<SettingsPage> {
     _loadSettings();
   }
 
-  Future<void> _resetScores() async {
+  Future<void> _resetUserData() async {
     final shouldReset = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Reset scoreboard'),
-          content: const Text('Are you sure you want to clear all high scores? This cannot be undone.'),
+          title: const Text('Reset user data'),
+          content: const Text(
+              'Are you sure you want to reset all your data? This will clear your high scores, XP, activity history, audio settings and daily reminders. This cannot be undone.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -51,43 +58,36 @@ class _SettingsPageState extends State<SettingsPage> {
     );
 
     if (shouldReset == true) {
+      // Clear highscores
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('highscores');
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('High scores have been reset.')),
-      );
-    }
-  }
 
-  Future<void> _resetXp() async {
-    final shouldReset = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Reset XP & Activity'),
-          content: const Text(
-              'Are you sure you want to reset your experience points and activity history?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Reset'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (shouldReset == true) {
+      // Reset XP and activity history
       await XpService().resetXp();
       await ActivityService().resetSessions();
+
+      // Reset audio settings to defaults (both enabled by default)
+      final audioService = AudioService();
+      await audioService.setMusicEnabled(true);
+      await audioService.setSoundEffectsEnabled(true);
+
+      // Reset notifications: turn off daily reminders
+      final notificationService = NotificationService();
+      await notificationService
+          .saveReminderFrequency(ReminderFrequency.off);
+      await notificationService
+          .scheduleLessonReminders(ReminderFrequency.off);
+
       if (!mounted) return;
+
+      setState(() {
+        isMusicEnabled = audioService.isMusicEnabled;
+        isSoundEffectsEnabled = audioService.isSoundEffectsEnabled;
+        _notificationsEnabled = false;
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('XP and activity history have been reset.')),
+        const SnackBar(content: Text('All user data has been reset.')),
       );
     }
   }
@@ -129,25 +129,58 @@ class _SettingsPageState extends State<SettingsPage> {
                 await AudioService().setSoundEffectsEnabled(value);
               },
             ),
-            const SizedBox(height: 24),
+            const Divider(),
+            SwitchListTile(
+              title: const Text('Daily lesson reminders'),
+              subtitle:
+                  const Text('Get a notification once a day to take a lesson'),
+              value: _notificationsEnabled,
+              onChanged: (value) async {
+                final notificationService = NotificationService();
+
+                // Użytkownik próbuje włączyć powiadomienia
+                if (value) {
+                  final granted =
+                      await notificationService.ensurePermissionsGranted();
+
+                  if (!granted) {
+                    if (!mounted) return;
+                    setState(() {
+                      _notificationsEnabled = false;
+                    });
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Notifications are disabled. Enable them in system settings to receive daily reminders.',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+                }
+
+                if (!mounted) return;
+                setState(() {
+                  _notificationsEnabled = value;
+                });
+
+                final frequency =
+                    value ? ReminderFrequency.everyDay : ReminderFrequency.off;
+                await notificationService.saveReminderFrequency(frequency);
+                await notificationService.scheduleLessonReminders(frequency);
+              },
+            ),
             const Divider(),
             ListTile(
-              leading: const Icon(Icons.refresh, color: Colors.redAccent),
-              title: const Text('Reset scoreboard'),
-              subtitle: const Text('Clear all saved high scores'),
+              leading:
+                  const Icon(Icons.delete_forever, color: Colors.redAccent),
+              title: const Text('Reset user data'),
+              subtitle: const Text(
+                  'Clear all progress, high scores, audio and notification settings'),
               textColor: Colors.redAccent,
               iconColor: Colors.redAccent,
-              onTap: _resetScores,
-            ),
-            ListTile(
-              leading:
-                  const Icon(Icons.star_outline, color: Colors.orangeAccent),
-              title: const Text('Reset XP & activity'),
-              subtitle:
-                  const Text('Reset your experience points and activity log'),
-              textColor: Colors.orangeAccent,
-              iconColor: Colors.orangeAccent,
-              onTap: _resetXp,
+              onTap: _resetUserData,
             ),
           ],
         ),

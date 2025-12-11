@@ -4,6 +4,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:matem_appka/model/game_session.dart';
 import 'package:matem_appka/services/activity_service.dart';
 
+import '../const/colors.dart';
+
 class ActivityPage extends StatefulWidget {
   const ActivityPage({super.key});
 
@@ -101,14 +103,13 @@ class _ActivityPageState extends State<ActivityPage> {
             formatButtonVisible: false,
             titleCentered: true,
           ),
-          calendarStyle: const CalendarStyle(
+          calendarStyle: CalendarStyle(
             todayDecoration: BoxDecoration(
-              color: Colors.blueAccent,
+              color: primaryColor,
               shape: BoxShape.circle,
             ),
             selectedDecoration: BoxDecoration(
-              color: Colors.blue,
-              shape: BoxShape.circle,
+              color: primaryColor,
             ),
           ),
           eventLoader: (day) {
@@ -137,16 +138,14 @@ class _ActivityPageState extends State<ActivityPage> {
     final currentStreak = _activityService.currentStreak;
     final bestStreak = _activityService.bestStreak;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
+    return  Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             child: _buildSummaryCard(
               title: 'XP earned today',
               value: '$todayXp',
-              subtitle: 'Last 7 days shown below',
+              subtitle: 'Keep it up!',
               color: Colors.blue,
               icon: Icons.bolt_outlined,
             ),
@@ -162,8 +161,7 @@ class _ActivityPageState extends State<ActivityPage> {
             ),
           ),
         ],
-      ),
-    );
+      );
   }
 
   Widget _buildSummaryCard({
@@ -286,12 +284,12 @@ class _ActivityPageState extends State<ActivityPage> {
                     lineBarsData: [
                       LineChartBarData(
                         isCurved: true,
-                        color: Colors.blue,
+                        color: primaryColor,
                         barWidth: 3,
                         dotData: FlDotData(show: true),
                         belowBarData: BarAreaData(
                           show: true,
-                          color: Colors.blue.withValues(alpha: 0.15),
+                          color: primaryColor.withValues(alpha: 0.15),
                         ),
                         spots: [
                           for (int i = 0; i < 7; i++)
@@ -327,7 +325,7 @@ class _ActivityPageState extends State<ActivityPage> {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: _selectedDaySessions.length,
-          separatorBuilder: (_, __) => const Divider(height: 1),
+          separatorBuilder: (_, _) => const Divider(height: 1),
           itemBuilder: (context, index) {
             final s = _selectedDaySessions[index];
             final time = TimeOfDay.fromDateTime(s.playedAt).format(context);
