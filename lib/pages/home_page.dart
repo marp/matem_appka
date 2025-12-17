@@ -18,6 +18,7 @@ class _HomePageState extends State<HomePage> {
   int _bestStreak = 0;
   int _currentXp = 0;
   bool _isStreakPressed = false;
+  bool _todayStreakDone = false;
 
   @override
   void initState() {
@@ -44,10 +45,17 @@ class _HomePageState extends State<HomePage> {
   Future<void> _loadStats() async {
     final streakService = StreakService();
     final xpService = XpService();
+
+    final lastPlayed = streakService.lastPlayedDate;
+    final now = DateTime.now();
+    final todayStr =
+        '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
     setState(() {
       _currentStreak = streakService.currentStreak;
       _bestStreak = streakService.bestStreak;
       _currentXp = xpService.currentXp;
+      _todayStreakDone = lastPlayed == todayStr;
     });
   }
 
@@ -55,9 +63,9 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width - 80;
 
-    return Container(
-      color: Color(0xFF272837),
-      child: Center(
+    return Scaffold(
+      backgroundColor: const Color(0xFF272837),
+      body: Center(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(0, 40, 0, 20),
           child: Column(
@@ -170,6 +178,17 @@ class _HomePageState extends State<HomePage> {
                                     color: Colors.white,
                                   ),
                                 ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _todayStreakDone ? 'today ✓' : 'today ✗',
+                                    style: const TextStyle(
+                                      fontFamily: 'Manrope',
+                                      fontWeight: FontWeight.w500,
+                                      decoration: TextDecoration.none,
+                                      fontSize: 12,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
                               ],
                             ),
                           ),
@@ -264,14 +283,19 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                   modeButton(
-                    'Pass & Play',
+                    'Pass \& Play',
                     'Challenge your friends',
                     Icons.people,
                     Color(0xFFFF8306),
                     width,
                     () {
-                      Navigator.pushNamed(context, '/game',
-                          arguments: {'mode': GameMode.passplay});
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                              'Ta funkcja nie jest jeszcze zaimplementowana'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
                     },
                   ),
                 ],

@@ -3,6 +3,13 @@ import 'package:flutter/material.dart';
 var primaryColor = Colors.indigoAccent;
 var secondaryColor = Colors.amberAccent;
 
+var headerText = const TextStyle(
+  fontFamily: 'Manrope',
+  fontWeight: FontWeight.bold,
+  fontSize: 18,
+  color: Colors.black,
+);
+
 var normalText = const TextStyle(
   fontSize: 18,
   color: Colors.black,

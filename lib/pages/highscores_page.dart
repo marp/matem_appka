@@ -9,24 +9,12 @@ class HighScoresPage extends StatefulWidget {
   State<HighScoresPage> createState() => _HighScoresPageState();
 }
 
-class HighScoreGroup {
-  final String gameType;
-  final int bestScore;
-  final int gamesPlayed;
-  final DateTime lastPlayed;
-
-  HighScoreGroup({
-    required this.gameType,
-    required this.bestScore,
-    required this.gamesPlayed,
-    required this.lastPlayed,
-  });
-}
-
 class _HighScoresPageState extends State<HighScoresPage> {
   final ActivityService _activityService = ActivityService();
 
-  List<HighScoreGroup> _groups = [];
+  // Top sessions per tab
+  List<GameSession> _playSessions = [];
+  List<GameSession> _timeTrialSessions = [];
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -35,6 +23,17 @@ class _HighScoresPageState extends State<HighScoresPage> {
     super.initState();
     _loadHighScores();
   }
+
+  String _modeTabForGameType(String gameType) {
+    final lower = gameType.toLowerCase();
+    // Heuristic: anything containing 'time' goes to Time Trial, rest to Play
+    if (lower.contains('time')) {
+      return 'timeTrial';
+    }
+    return 'play';
+  }
+
+  int _scoreForSession(GameSession session) => session.score;
 
   Future<void> _loadHighScores() async {
     setState(() {
@@ -46,49 +45,38 @@ class _HighScoresPageState extends State<HighScoresPage> {
       // Zakładamy, że ActivityService.initialize() został już wywołany przy starcie aplikacji.
       final List<GameSession> sessions = _activityService.sessions;
 
-      // Group sessions by gameType
-      final Map<String, List<GameSession>> byType = {};
+      final List<GameSession> playSessions = [];
+      final List<GameSession> timeTrialSessions = [];
+
       for (final s in sessions) {
-        final key = s.gameType;
-        byType.putIfAbsent(key, () => []).add(s);
+        final tab = _modeTabForGameType(s.gameType);
+        if (tab == 'timeTrial') {
+          timeTrialSessions.add(s);
+        } else {
+          playSessions.add(s);
+        }
       }
 
-      final List<HighScoreGroup> groups = [];
-      byType.forEach((gameType, typeSessions) {
-        if (typeSessions.isEmpty) return;
-        int bestScore = 0;
-        int gamesPlayed = typeSessions.length;
-        DateTime lastPlayed = typeSessions.first.playedAt;
-
-        for (final s in typeSessions) {
-          if (s.score > bestScore) {
-            bestScore = s.score;
-          }
-          if (s.playedAt.isAfter(lastPlayed)) {
-            lastPlayed = s.playedAt;
-          }
-        }
-
-        groups.add(HighScoreGroup(
-          gameType: gameType,
-          bestScore: bestScore,
-          gamesPlayed: gamesPlayed,
-          lastPlayed: lastPlayed,
-        ));
-      });
-
-      // Sort groups by bestScore desc, then lastPlayed desc
-      groups.sort((a, b) {
-        final scoreCompare = b.bestScore.compareTo(a.bestScore);
+      // Sort each list by score desc, then playedAt desc
+      int compareSessions(GameSession a, GameSession b) {
+        final scoreCompare = _scoreForSession(b).compareTo(_scoreForSession(a));
         if (scoreCompare != 0) return scoreCompare;
-        return b.lastPlayed.compareTo(a.lastPlayed);
-      });
+        return b.playedAt.compareTo(a.playedAt);
+      }
 
-      // Keep top 10 groups
-      final topGroups = groups.length > 10 ? groups.sublist(0, 10) : groups;
+      playSessions.sort(compareSessions);
+      timeTrialSessions.sort(compareSessions);
+
+      // Keep top 10 sessions per tab
+      final topPlay =
+          playSessions.length > 10 ? playSessions.sublist(0, 10) : playSessions;
+      final topTime = timeTrialSessions.length > 10
+          ? timeTrialSessions.sublist(0, 10)
+          : timeTrialSessions;
 
       setState(() {
-        _groups = topGroups;
+        _playSessions = topPlay;
+        _timeTrialSessions = topTime;
         _isLoading = false;
       });
     } catch (e) {
@@ -101,37 +89,50 @@ class _HighScoresPageState extends State<HighScoresPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
+          title: const Text('High Scores'),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Play'),
+              Tab(text: 'Time Trial'),
+            ],
+          ),
         ),
-        title: const Text('High Scores'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        body: TabBarView(
           children: [
-            Text(
-              'Top Game Modes',
-              style: Theme.of(context).textTheme.headlineSmall,
+            _buildTabContent(
+              context: context,
+              title: 'Top 10 Play Scores',
+              sessions: _playSessions,
+              emptyMessage: 'No Play scores yet.',
             ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: _buildBody(),
+            _buildTabContent(
+              context: context,
+              title: 'Top 10 Time Trial Scores',
+              sessions: _timeTrialSessions,
+              emptyMessage: 'No Time Trial scores yet.',
             ),
-            const SizedBox(height: 16),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildTabContent({
+    required BuildContext context,
+    required String title,
+    required List<GameSession> sessions,
+    required String emptyMessage,
+  }) {
     if (_isLoading) {
       return const Center(
         child: CircularProgressIndicator(),
@@ -156,32 +157,47 @@ class _HighScoresPageState extends State<HighScoresPage> {
       );
     }
 
-    if (_groups.isEmpty) {
-      return const Center(
-        child: Text('No games recorded yet.'),
+    if (sessions.isEmpty) {
+      return Center(
+        child: Text(emptyMessage),
       );
     }
 
-    return ListView.builder(
-      itemCount: _groups.length,
-      itemBuilder: (context, index) {
-        final group = _groups[index];
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          child: ListTile(
-            leading: CircleAvatar(child: Text('${index + 1}')),
-            title: Text('Mode: ${group.gameType}'),
-            subtitle: Text(
-              'Best score: ${group.bestScore}\nGames played: ${group.gamesPlayed}',
-            ),
-            isThreeLine: true,
-            trailing: Text(
-              '${group.lastPlayed.toLocal()}',
-              style: Theme.of(context).textTheme.bodySmall,
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: ListView.builder(
+              itemCount: sessions.length,
+              itemBuilder: (context, index) {
+                final session = sessions[index];
+                final dateTime = session.playedAt.toLocal();
+                final twoDigits = (int n) => n.toString().padLeft(2, '0');
+                final formattedDate =
+                    '${twoDigits(dateTime.day)}.${twoDigits(dateTime.month)}.${dateTime.year} ${twoDigits(dateTime.hour)}:${twoDigits(dateTime.minute)}';
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  child: ListTile(
+                    leading: CircleAvatar(child: Text('${index + 1}')),
+                    title: Text('Score: ${session.score}'),
+                    trailing: Text(
+                      formattedDate,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 }

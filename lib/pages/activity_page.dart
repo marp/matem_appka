@@ -65,7 +65,8 @@ class _ActivityPageState extends State<ActivityPage> {
                 padding: const EdgeInsets.all(16),
                 children: [
                   _buildCalendarCard(),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 8),
+                  Text("Overview", style: headerText),
                   _buildSummaryRow(),
                   const SizedBox(height: 8),
                   _buildDaySessionsList(),
