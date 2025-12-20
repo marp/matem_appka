@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:back_button_interceptor/back_button_interceptor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +7,7 @@ import 'package:matem_appka/util/result_message.dart';
 import 'package:matem_appka/services/audio_service.dart';
 import 'package:matem_appka/services/xp_service.dart';
 import 'package:matem_appka/services/activity_service.dart';
+import 'package:matem_appka/services/game_service.dart';
 
 import '../const/colors.dart';
 import '../model/game_session.dart';
@@ -38,12 +37,8 @@ class _GamePageState extends State<GamePage> {
     '+/-',
   ];
 
-  int numberA = 0;
-  int numberB = 0;
-  MathOperation operation = MathOperation.add;
-
-  int remainingMistakes = 3;
-  int score = 0;
+  // NOTE: state for question/score/mistakes is now in GameService.
+  // Removed old fields: numberA, numberB, operation, remainingMistakes, score.
 
   String userAnswer = '';
 
@@ -58,6 +53,16 @@ class _GamePageState extends State<GamePage> {
   // Tracks whether a result-related dialog is visible and how to confirm it.
   bool _isResultDialogVisible = false;
   VoidCallback? _onResultDialogConfirm;
+
+  // Game domain logic extracted from UI.
+  late final GameService _gameService;
+
+  int get numberA => _gameService.state.question.a;
+  int get numberB => _gameService.state.question.b;
+  MathOperation get operation => _gameService.state.question.operation;
+
+  int get remainingMistakes => _gameService.state.remainingMistakes;
+  int get score => _gameService.state.score;
 
   void buttonTapped(String button) {
     setState(() {
@@ -148,7 +153,9 @@ class _GamePageState extends State<GamePage> {
   }
 
   void checkResult() {
-    if (_calculateResult(numberA, numberB, operation) == int.tryParse(userAnswer)) {
+    final outcome = _gameService.submitAnswer(int.tryParse(userAnswer));
+
+    if (outcome == AnswerOutcome.correct) {
       AudioService().playCorrectSound();
       _isResultDialogVisible = true;
       _onResultDialogConfirm = () {
@@ -169,35 +176,44 @@ class _GamePageState extends State<GamePage> {
           );
         },
       );
-      if (mode != GameMode.practice) score++;
-    } else {
-      AudioService().playIncorrectSound();
-      _isResultDialogVisible = true;
-      _onResultDialogConfirm = () {
-        _isResultDialogVisible = false;
-        goBackToQuestion();
-      };
-      showDialog(
-        context: context,
-        builder: (context) {
-          return ResultMessage(
-            message: 'Sorry, try again!',
-            onTap: () {
-              _isResultDialogVisible = false;
-              goBackToQuestion();
-            },
-            icon: Icons.rotate_left,
-          );
-        },
-      );
-      if (mode != GameMode.practice) {
-        if (remainingMistakes == 1) {
-          timerStream = Stream.empty();
-          gameOver();
-        }
-        remainingMistakes--;
-      }
+
+      // Score is updated in GameService.
+      setState(() {});
+      return;
     }
+
+    // Incorrect or GameOver
+    AudioService().playIncorrectSound();
+
+    if (outcome == AnswerOutcome.gameOver) {
+      timerStream = Stream.empty();
+      // ensure UI picks up remainingMistakes/score changes
+      setState(() {});
+      gameOver();
+      return;
+    }
+
+    _isResultDialogVisible = true;
+    _onResultDialogConfirm = () {
+      _isResultDialogVisible = false;
+      goBackToQuestion();
+    };
+    showDialog(
+      context: context,
+      builder: (context) {
+        return ResultMessage(
+          message: 'Sorry, try again!',
+          onTap: () {
+            _isResultDialogVisible = false;
+            goBackToQuestion();
+          },
+          icon: Icons.rotate_left,
+        );
+      },
+    );
+
+    // remainingMistakes may have changed in GameService.
+    setState(() {});
   }
 
   void gameOver() {
@@ -243,11 +259,9 @@ class _GamePageState extends State<GamePage> {
     }
   }
 
-  var randomNumber = Random();
-
   Stream<int> timerStream = Stream.empty();
 
-  void goToNextQuestion(){
+  void goToNextQuestion() {
     //dissmiss alert dialog
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
@@ -256,16 +270,11 @@ class _GamePageState extends State<GamePage> {
     // reset values
     setState(() {
       userAnswer = '';
+      _gameService.nextQuestion();
     });
-
-    //create new question
-    numberA = randomNumber.nextInt(10);
-    numberB = randomNumber.nextInt(10);
-    operation = MathOperation.values[randomNumber.nextInt(MathOperation.values.length)];
-
   }
 
-  void goBackToQuestion(){
+  void goBackToQuestion() {
     //dissmiss alert dialog
     Navigator.of(context).pop();
 
@@ -278,7 +287,9 @@ class _GamePageState extends State<GamePage> {
   @override
   void initState() {
     super.initState();
-    BackButtonInterceptor.add(myInterceptor);
+    BackButtonInterceptor.add(myInterceptor, context: context);
+
+    _gameService = GameService();
 
     // Delay to get context for ModalRoute
     Future.microtask(() {
@@ -288,17 +299,16 @@ class _GamePageState extends State<GamePage> {
           mode = args['mode'] as GameMode;
         });
       }
+
+      _gameService.start(mode: mode);
+
       if (mode == GameMode.practice) {
-        remainingMistakes = 9999;
         timerStream = Stream.empty();
       } else {
         // Start the timer and play countdown sound for timed mode
         timerStream = Stream.periodic(const Duration(seconds: 1), (x) => x).take(secondsLeft);
         AudioService().playCountdownSound();
       }
-      numberA = randomNumber.nextInt(10);
-      numberB = randomNumber.nextInt(10);
-      operation = MathOperation.values[randomNumber.nextInt(MathOperation.values.length)];
 
       // After first frame, grab focus so physical keyboard works immediately
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -306,55 +316,73 @@ class _GamePageState extends State<GamePage> {
           _keyboardFocusNode.requestFocus();
         }
       });
+
+      // Ensure initial question is shown.
+      setState(() {});
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Focus(
-      focusNode: _keyboardFocusNode,
-      autofocus: true,
-      onKeyEvent: _handleKeyEvent,
-      child: Scaffold(
-        backgroundColor: Colors.deepPurple[300],
-        body: Column(
-          children: [
-            // level progress, player needs 5 correct answers in a row to proceed to a next level
-            Container(
-              height: 160,
-              color: Colors.deepPurple,
-              child: Center(
-                child: mode == GameMode.practice
-                    ? Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          topBarElement(
-                            Text('∞', style: whiteBoldedText),
-                            Icons.cancel,
-                            Colors.redAccent,
-                          ),
-                          topBarElement(
-                            Text('-', style: whiteBoldedText),
-                            Icons.star,
-                            Colors.yellow,
-                          ),
-                        ],
-                      )
-                    : StreamBuilder<int>(
-                        stream: timerStream,
-                        builder: (context, snapshot) {
-                          // Check if the timer has ended
-                          if (snapshot.hasData &&
-                              snapshot.data == secondsLeft - 1) {
-                            // End the game if time is up
-                            Future.microtask(() {
-                              // if (Navigator.canPop(context)) Navigator.of(context).popUntil((route) => route.isFirst);
-                              gameOver();
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _showExitConfirmDialog();
+      },
+      child: Focus(
+        focusNode: _keyboardFocusNode,
+        autofocus: true,
+        onKeyEvent: _handleKeyEvent,
+        child: Scaffold(
+          backgroundColor: Colors.deepPurple[300],
+          body: Column(
+            children: [
+              Container(
+                height: 160,
+                color: Colors.deepPurple,
+                child: Center(
+                  child: mode == GameMode.practice
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.close, color: Colors.white70, size: 28),
+                              onPressed: _showExitConfirmDialog,
+                              tooltip: 'Exit',
+                            ),
+                            topBarElement(
+                              Text('∞', style: whiteBoldedText),
+                              Icons.error,
+                              Colors.redAccent,
+                            ),
+                            topBarElement(
+                              Text('-', style: whiteBoldedText),
+                              Icons.star,
+                              Colors.yellow,
+                            ),
+                          ],
+                        )
+                      : StreamBuilder<int>(
+                          stream: timerStream,
+                          builder: (context, snapshot) {
+                            // Check if the timer has ended
+                            if (snapshot.hasData &&
+                                snapshot.data == secondsLeft - 1) {
+                              // End the game if time is up
+                              Future.microtask(() {
+                                // if (Navigator.canPop(context)) Navigator.of(context).popUntil((route) => route.isFirst);
+                                gameOver();
                             });
                           }
                           return Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
+                              IconButton(
+                                icon: const Icon(Icons.close, color: Colors.white70, size: 28),
+                                onPressed: _showExitConfirmDialog,
+                                tooltip: 'Exit',
+                              ),
                               topBarElement(
                                   buildRemainingTimeText(snapshot.data),
                                   Icons.timer,
@@ -374,13 +402,13 @@ class _GamePageState extends State<GamePage> {
                                     );
                                   },
                                   child: Text(
-                                    remainingMistakes.toString(),
+                                    mode == GameMode.timetrial ? '∞' : remainingMistakes.toString(),
                                     key: ValueKey<int>(remainingMistakes),
                                     style: whiteBoldedText.copyWith(
                                         color: Colors.white),
                                   ),
                                 ),
-                                Icons.cancel,
+                                Icons.error,
                                 Colors.redAccent,
                               ),
                               topBarElement(
@@ -405,63 +433,64 @@ class _GamePageState extends State<GamePage> {
                           );
                         },
                       ),
+                ),
               ),
-            ),
-            Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  spacing: 5,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          '$numberA ${mathOperations[operation]} $numberB = ',
-                          style: whiteTextStyle,
-                        ),
-                        Container(
-                          height: 50,
-                          width: 100,
-                          decoration: BoxDecoration(
-                            color: Colors.deepPurple[400],
-                            borderRadius: BorderRadius.circular(4),
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    spacing: 5,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '$numberA ${mathOperations[operation]} $numberB = ',
+                            style: whiteTextStyle,
                           ),
-                          child: Center(
-                            child: Text(userAnswer, style: whiteTextStyle),
+                          Container(
+                            height: 50,
+                            width: 100,
+                            decoration: BoxDecoration(
+                              color: Colors.deepPurple[400],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Center(
+                              child: Text(userAnswer, style: whiteTextStyle),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    if (operation == MathOperation.divide)
-                      Text(
-                        'Give the result without remainder',
-                        style: greyTextStyle,
+                        ],
                       ),
-                  ],
+                      if (operation == MathOperation.divide)
+                        Text(
+                          'Give the result without remainder',
+                          style: greyTextStyle,
+                        ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: GridView.builder(
-                  itemCount: numberPad.length,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4),
-                  itemBuilder: (context, index) {
-                    return MyButton(
-                      child: numberPad[index],
-                      onTap: () => buttonTapped(numberPad[index]),
-                    );
-                  },
+              Expanded(
+                flex: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: GridView.builder(
+                    itemCount: numberPad.length,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 4),
+                    itemBuilder: (context, index) {
+                      return MyButton(
+                        child: numberPad[index],
+                        onTap: () => buttonTapped(numberPad[index]),
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -497,7 +526,16 @@ class _GamePageState extends State<GamePage> {
   }
 
   bool myInterceptor(bool stopDefaultButtonEvent, RouteInfo info) {
-    if (isDialogOpen) return true; // Prevent opening multiple dialogs
+    _showExitConfirmDialog();
+    return true; // Prevent default back button behavior
+  }
+
+  void _showExitConfirmDialog() {
+    if (isDialogOpen) return; // Prevent opening multiple dialogs
+
+    // If a result dialog is currently visible (Correct/Incorrect/GameOver),
+    // don't stack another dialog on top.
+    if (_isResultDialogVisible) return;
 
     isDialogOpen = true;
     showDialog(
@@ -525,22 +563,5 @@ class _GamePageState extends State<GamePage> {
     ).then((_) {
       isDialogOpen = false; // Ensure flag is reset when dialog is dismissed
     });
-
-    return true; // Prevent default back button behavior
-  }
-
-  int _calculateResult(int a, int b, MathOperation op) {
-    switch (op) {
-      case MathOperation.add:
-        return a + b;
-      case MathOperation.subtract:
-        return a - b;
-      case MathOperation.multiply:
-        return a * b;
-      case MathOperation.divide:
-        return b != 0 ? a ~/ b : 0;
-      default:
-        return 0;
-    }
   }
 }
