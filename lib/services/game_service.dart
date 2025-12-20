@@ -67,7 +67,7 @@ class GameService {
 
   /// Initializes state for given [mode] and generates the first question.
   void start({required GameMode mode}) {
-    final initialMistakes = mode == GameMode.practice ? 9999 : 3;
+    const initialMistakes = 3;
     _state = GameState(
       mode: mode,
       question: _generateQuestion(),
@@ -136,4 +136,3 @@ class GameService {
     }
   }
 }
-

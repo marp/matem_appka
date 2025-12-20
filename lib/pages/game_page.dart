@@ -157,28 +157,18 @@ class _GamePageState extends State<GamePage> {
 
     if (outcome == AnswerOutcome.correct) {
       AudioService().playCorrectSound();
-      _isResultDialogVisible = true;
-      _onResultDialogConfirm = () {
-        _isResultDialogVisible = false;
-        goToNextQuestion();
-      };
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) {
-          return ResultMessage(
-            message: 'Correct!',
-            onTap: () {
-              _isResultDialogVisible = false;
-              goToNextQuestion();
-            },
-            icon: Icons.arrow_forward,
-          );
-        },
-      );
 
-      // Score is updated in GameService.
-      setState(() {});
+      // Only try to close a dialog if one is actually on the stack.
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+
+      // Move to next question (also resets input and generates a new question).
+      setState(() {
+        userAnswer = '';
+        _gameService.nextQuestion();
+      });
+
       return;
     }
 
@@ -200,14 +190,18 @@ class _GamePageState extends State<GamePage> {
     };
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) {
         return ResultMessage(
-          message: 'Sorry, try again!',
+          message: 'Wrong answer',
+          subtitle: 'Relax and try again.',
+          buttonText: 'Ok',
           onTap: () {
             _isResultDialogVisible = false;
             goBackToQuestion();
           },
           icon: Icons.rotate_left,
+          accentColor: Colors.orangeAccent,
         );
       },
     );
@@ -230,13 +224,16 @@ class _GamePageState extends State<GamePage> {
       barrierDismissible: false,
       builder: (context) {
         return ResultMessage(
-          message: 'Game Over! Your score is $score',
+          message: 'End of the game',
+          subtitle: 'Your score: $score',
+          buttonText: 'Back to Home',
           onTap: () {
             _isResultDialogVisible = false;
             gameEnd();
             Navigator.pushNamed(context, '/home');
           },
-          icon: Icons.close,
+          icon: Icons.hourglass_bottom,
+          accentColor: Colors.yellow
         );
       },
     );
@@ -322,6 +319,142 @@ class _GamePageState extends State<GamePage> {
     });
   }
 
+  // Header styling
+  static const double _headerHeight = 125;
+
+  Widget _statChip({
+    required IconData icon,
+    required String value,
+    required Color iconColor,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Slightly more compact on narrow layouts.
+        final isNarrow = MediaQuery.sizeOf(context).width < 380;
+        final horizontal = isNarrow ? 10.0 : 12.0;
+        final vertical = isNarrow ? 8.0 : 10.0;
+        final gap = isNarrow ? 8.0 : 10.0;
+        // final iconSize = isNarrow ? 18.0 : 20.0;
+        final iconSize = 24.0;
+        final valueSize = isNarrow ? 24.0 : 26.0;
+
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: horizontal, vertical: vertical),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: iconColor, size: iconSize),
+              SizedBox(width: gap),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Prevent value text from overflowing (e.g. long time)
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      value,
+                      style: whiteBoldedText.copyWith(fontSize: valueSize, height: 1.0),
+                      maxLines: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      height: _headerHeight,
+      color: Colors.deepPurple,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: SafeArea(
+        bottom: false,
+        child: Center(
+          child: StreamBuilder<int>(
+            stream: mode == GameMode.practice ? Stream<int>.empty() : timerStream,
+            builder: (context, snapshot) {
+              // Timed modes: end game when timer ends
+              if (mode != GameMode.practice &&
+                  snapshot.hasData &&
+                  snapshot.data == secondsLeft - 1) {
+                Future.microtask(() {
+                  gameOver();
+                });
+              }
+
+              final timeValue = mode == GameMode.practice
+                  ? '∞'
+                  : _formatRemainingTime(snapshot.data);
+
+              final mistakesValue = mode == GameMode.play
+                  ? remainingMistakes.toString()
+                  : '∞';
+
+              return Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white70, size: 26),
+                    onPressed: _showExitConfirmDialog,
+                    tooltip: 'Exit',
+                  ),
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Wrap(
+                        alignment: WrapAlignment.center,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 10,
+                        runSpacing: 8,
+                        children: [
+                          _statChip(
+                            icon: Icons.timer,
+                            value: timeValue,
+                            iconColor: Colors.white70,
+                          ),
+                          _statChip(
+                            icon: Icons.error,
+                            value: mistakesValue,
+                            iconColor: Colors.redAccent,
+                          ),
+                          if (mode != GameMode.practice)
+                            _statChip(
+                              icon: Icons.star,
+                              value: score.toString(),
+                              iconColor: Colors.yellow,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Symmetry placeholder (same width as IconButton) so the wrap stays centered.
+                  const SizedBox(width: 40),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatRemainingTime(int? elapsedSeconds) {
+    final remainingTime = 120 - (elapsedSeconds ?? 0);
+    final minutes = remainingTime ~/ 60;
+    final seconds = remainingTime % 60;
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -338,103 +471,7 @@ class _GamePageState extends State<GamePage> {
           backgroundColor: Colors.deepPurple[300],
           body: Column(
             children: [
-              Container(
-                height: 160,
-                color: Colors.deepPurple,
-                child: Center(
-                  child: mode == GameMode.practice
-                      ? Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.close, color: Colors.white70, size: 28),
-                              onPressed: _showExitConfirmDialog,
-                              tooltip: 'Exit',
-                            ),
-                            topBarElement(
-                              Text('∞', style: whiteBoldedText),
-                              Icons.error,
-                              Colors.redAccent,
-                            ),
-                            topBarElement(
-                              Text('-', style: whiteBoldedText),
-                              Icons.star,
-                              Colors.yellow,
-                            ),
-                          ],
-                        )
-                      : StreamBuilder<int>(
-                          stream: timerStream,
-                          builder: (context, snapshot) {
-                            // Check if the timer has ended
-                            if (snapshot.hasData &&
-                                snapshot.data == secondsLeft - 1) {
-                              // End the game if time is up
-                              Future.microtask(() {
-                                // if (Navigator.canPop(context)) Navigator.of(context).popUntil((route) => route.isFirst);
-                                gameOver();
-                            });
-                          }
-                          return Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.close, color: Colors.white70, size: 28),
-                                onPressed: _showExitConfirmDialog,
-                                tooltip: 'Exit',
-                              ),
-                              topBarElement(
-                                  buildRemainingTimeText(snapshot.data),
-                                  Icons.timer,
-                                  Colors.white70),
-                              topBarElement(
-                                AnimatedSwitcher(
-                                  duration:
-                                      const Duration(milliseconds: 300),
-                                  transitionBuilder:
-                                      (child, animation) {
-                                    return SlideTransition(
-                                      position: Tween<Offset>(
-                                        begin: const Offset(0, -1.5),
-                                        end: const Offset(0, 0),
-                                      ).animate(animation),
-                                      child: child,
-                                    );
-                                  },
-                                  child: Text(
-                                    mode == GameMode.timetrial ? '∞' : remainingMistakes.toString(),
-                                    key: ValueKey<int>(remainingMistakes),
-                                    style: whiteBoldedText.copyWith(
-                                        color: Colors.white),
-                                  ),
-                                ),
-                                Icons.error,
-                                Colors.redAccent,
-                              ),
-                              topBarElement(
-                                AnimatedSwitcher(
-                                  duration:
-                                      const Duration(milliseconds: 300),
-                                  transitionBuilder:
-                                      (child, animation) {
-                                    return ScaleTransition(
-                                        scale: animation, child: child);
-                                  },
-                                  child: Text(
-                                    score.toString(),
-                                    key: ValueKey<int>(score),
-                                    style: whiteBoldedText,
-                                  ),
-                                ),
-                                Icons.star,
-                                Colors.yellow,
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                ),
-              ),
+              _buildHeader(context),
               Expanded(
                 child: Center(
                   child: Column(
@@ -493,28 +530,6 @@ class _GamePageState extends State<GamePage> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget buildRemainingTimeText(int? elapsedSeconds) {
-    int remainingTime = 120 - (elapsedSeconds ?? 0);
-    int minutes = remainingTime ~/ 60;
-    int seconds = remainingTime % 60;
-
-    return Text(
-      '$minutes:${seconds.toString().padLeft(2, '0')}',
-      style: whiteBoldedText,
-    );
-  }
-
-  Widget topBarElement(Widget child, IconData icon, Color color) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon, color: color, size: 36),
-        const SizedBox(width: 8),
-        child,
-      ],
     );
   }
 
