@@ -2,12 +2,6 @@
 
 A simple Flutter game that helps children practice math through short, interactive tasks. It features an activity calendar, progress tracking, and gentle reminders to support regular learning habits.
 
-## To do
-- [ ] Add sounds
-- [ ] Add more math operations
-- [ ] Add more game modes
-- [ ] Add more animations
-
 ## How to compile
 1. Install Flutter SDK
 2. Run `flutter pub get` to install dependencies
@@ -16,7 +10,6 @@ A simple Flutter game that helps children practice math through short, interacti
    - `flutter build apk` to build the APK
    - `flutter build ios` to build the iOS app
    - `flutter build web` to build the web app
-   - `flutter build windows` to build the Windows app
 
 ## Credits
 Music
