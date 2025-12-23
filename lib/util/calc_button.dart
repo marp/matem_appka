@@ -2,21 +2,24 @@ import 'package:flutter/material.dart';
 
 import '../const/colors.dart';
 
-class MyButton extends StatefulWidget {
+class CalcButton extends StatefulWidget {
   final String child;
   final VoidCallback onTap;
 
-  MyButton({
+  final double height;
+
+  CalcButton({
     super.key,
     required this.child,
     required this.onTap,
+    this.height = 1,
   });
 
   @override
-  _MyButtonState createState() => _MyButtonState();
+  _CalcButtonState createState() => _CalcButtonState();
 }
 
-class _MyButtonState extends State<MyButton> with SingleTickerProviderStateMixin {
+class _CalcButtonState extends State<CalcButton> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override
@@ -39,9 +42,9 @@ class _MyButtonState extends State<MyButton> with SingleTickerProviderStateMixin
     var buttonColor = Colors.deepPurple[400];
 
     if (widget.child == 'C') {
-      buttonColor = Colors.green;
-    } else if (widget.child == 'DEL') {
       buttonColor = Colors.red;
+    } else if (widget.child == 'DEL') {
+      buttonColor = Colors.green;
     } else if (widget.child == '=') {
       buttonColor = Colors.deepPurple;
     }
@@ -62,6 +65,7 @@ class _MyButtonState extends State<MyButton> with SingleTickerProviderStateMixin
             end: 0.9,
           ).animate(_controller),
           child: Container(
+            height: 56.0 * widget.height,
               decoration: BoxDecoration(
               color: buttonColor,
               borderRadius: BorderRadius.circular(4),
@@ -70,8 +74,7 @@ class _MyButtonState extends State<MyButton> with SingleTickerProviderStateMixin
               child: Text(widget.child, style: whiteTextStyle),
             ),
           ),
-        ),
-      ),
+        ),)
     );
   }
 }

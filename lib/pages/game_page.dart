@@ -2,7 +2,7 @@ import 'package:back_button_interceptor/back_button_interceptor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:matem_appka/const/game.dart';
-import 'package:matem_appka/util/my_button.dart';
+import 'package:matem_appka/util/calc_button.dart';
 import 'package:matem_appka/util/result_message.dart';
 import 'package:matem_appka/services/audio_service.dart';
 import 'package:matem_appka/services/xp_service.dart';
@@ -153,22 +153,19 @@ class _GamePageState extends State<GamePage> {
   }
 
   void checkResult() {
+    // Avoid handling answers while any dialog is visible.
+    if (isDialogOpen || _isResultDialogVisible) return;
+
     final outcome = _gameService.submitAnswer(int.tryParse(userAnswer));
 
     if (outcome == AnswerOutcome.correct) {
       AudioService().playCorrectSound();
 
-      // Only try to close a dialog if one is actually on the stack.
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
-
-      // Move to next question (also resets input and generates a new question).
+      // No dialog on correct answer: just advance to next question.
       setState(() {
         userAnswer = '';
         _gameService.nextQuestion();
       });
-
       return;
     }
 
@@ -193,8 +190,8 @@ class _GamePageState extends State<GamePage> {
       barrierDismissible: false,
       builder: (context) {
         return ResultMessage(
-          message: 'Wrong answer',
-          subtitle: 'Relax and try again.',
+          message: 'Incorrect Answer',
+          subtitle: 'Relax and try again!',
           buttonText: 'Ok',
           onTap: () {
             _isResultDialogVisible = false;
@@ -518,9 +515,10 @@ class _GamePageState extends State<GamePage> {
                         const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 4),
                     itemBuilder: (context, index) {
-                      return MyButton(
+                      return CalcButton(
                         child: numberPad[index],
                         onTap: () => buttonTapped(numberPad[index]),
+                        height: numberPad[index] == '=' ? 2.0 : 1.0,
                       );
                     },
                   ),

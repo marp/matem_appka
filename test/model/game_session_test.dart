@@ -42,7 +42,7 @@ void main() {
   test('fromJson without id generates new id', () {
     final json = <String, dynamic>{
       'playedAt': '2025-01-01T12:00:00.000Z',
-      'gameType': 'legacy',
+      'gameType': 'test',
       'xpEarned': 5,
       'score': 3,
     };
@@ -50,7 +50,7 @@ void main() {
     final session = GameSession.fromJson(json);
 
     expect(session.id, isNotEmpty);
-    expect(session.gameType, 'legacy');
+    expect(session.gameType, 'test');
     expect(session.score, 3);
   });
 }

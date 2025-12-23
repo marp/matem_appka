@@ -292,7 +292,7 @@ class _HomePageState extends State<HomePage> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
-                              'Ta funkcja nie jest jeszcze zaimplementowana'),
+                              'This mode is coming soon! Stay tuned.'),
                           duration: Duration(seconds: 2),
                         ),
                       );
