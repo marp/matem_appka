@@ -64,13 +64,15 @@ class _ActivityPageState extends State<ActivityPage> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  _buildCalendarCard(),
-                  const SizedBox(height: 8),
                   Text("Overview", style: headerText),
                   _buildSummaryRow(),
                   const SizedBox(height: 8),
+                  Text("Daily activities", style: headerText),
+                  _buildCalendarCard(),
+                  const SizedBox(height: 8),
                   _buildDaySessionsList(),
                   const SizedBox(height: 8),
+                  Text("Experience", style: headerText),
                   _buildWeeklyActivityChart(),
                   // const SizedBox(height: 24),
                   // _buildCategoryPieChart(),
@@ -311,15 +313,10 @@ class _ActivityPageState extends State<ActivityPage> {
 
   Widget _buildDaySessionsList() {
     if (_selectedDaySessions.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Text('No games on this day yet.'),
-      );
+      return const  Text('No games on this day yet.');
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Card(
+    return Card(
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: ListView.separated(
@@ -337,7 +334,6 @@ class _ActivityPageState extends State<ActivityPage> {
             );
           },
         ),
-      ),
-    );
+      );
   }
 }
