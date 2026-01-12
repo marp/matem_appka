@@ -59,11 +59,21 @@ enum AnswerOutcome {
 class GameService {
   final Random _random;
 
-  late GameState _state;
+  // Was `late` and could throw during first build before start() is called.
+  GameState? _state;
 
   GameService({Random? random}) : _random = random ?? Random();
 
-  GameState get state => _state;
+  bool get hasState => _state != null;
+
+  GameState get state {
+    final s = _state;
+    assert(
+      s != null,
+      'GameService.state was accessed before start() initialized it.',
+    );
+    return s!;
+  }
 
   /// Initializes state for given [mode] and generates the first question.
   void start({required GameMode mode}) {
@@ -78,7 +88,9 @@ class GameService {
 
   /// Generates and sets a new question.
   void nextQuestion() {
-    _state = _state.copyWith(question: _generateQuestion());
+    final current = _state;
+    if (current == null) return;
+    _state = current.copyWith(question: _generateQuestion());
   }
 
   /// Submits [answer]. Returns outcome and updates internal state.
@@ -88,21 +100,27 @@ class GameService {
   /// - incorrect: decrement remainingMistakes only for GameMode.play
   ///   and return gameOver when it would reach 0.
   AnswerOutcome submitAnswer(int? answer) {
-    final correct = _state.question.correctAnswer();
+    final current = _state;
+    if (current == null) {
+      // If UI calls submit before start(), treat as incorrect but don't crash.
+      return AnswerOutcome.incorrect;
+    }
+
+    final correct = current.question.correctAnswer();
     if (answer != null && answer == correct) {
-      if (_state.mode != GameMode.practice) {
-        _state = _state.copyWith(score: _state.score + 1);
+      if (current.mode != GameMode.practice) {
+        _state = current.copyWith(score: current.score + 1);
       }
       return AnswerOutcome.correct;
     }
 
-    if (_state.mode == GameMode.play) {
-      if (_state.remainingMistakes <= 1) {
+    if (current.mode == GameMode.play) {
+      if (current.remainingMistakes <= 1) {
         // Do not go below 0; preserve old behavior: game over triggers at 1.
-        _state = _state.copyWith(remainingMistakes: 0);
+        _state = current.copyWith(remainingMistakes: 0);
         return AnswerOutcome.gameOver;
       }
-      _state = _state.copyWith(remainingMistakes: _state.remainingMistakes - 1);
+      _state = current.copyWith(remainingMistakes: current.remainingMistakes - 1);
     }
 
     return AnswerOutcome.incorrect;

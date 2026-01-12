@@ -28,7 +28,7 @@ class _GamePageState extends State<GamePage> {
     '4',
     '5',
     '6',
-    'DEL',
+    '⌫',
     '1',
     '2',
     '3',
@@ -57,6 +57,9 @@ class _GamePageState extends State<GamePage> {
   // Game domain logic extracted from UI.
   late final GameService _gameService;
 
+  // Prevent accessing GameService.state before start() runs.
+  bool _gameStarted = false;
+
   int get numberA => _gameService.state.question.a;
   int get numberB => _gameService.state.question.b;
   MathOperation get operation => _gameService.state.question.operation;
@@ -78,7 +81,7 @@ class _GamePageState extends State<GamePage> {
             userAnswer = '-' + userAnswer; // add leading '-'
           }
         }
-      } else if (button == 'DEL') {
+      } else if (button == '⌫') {
         //delete the last character
         if (userAnswer.isNotEmpty) {
           userAnswer = userAnswer.substring(0, userAnswer.length - 1);
@@ -126,9 +129,9 @@ class _GamePageState extends State<GamePage> {
       }
     }
 
-    // Backspace => DEL
+    // Backspace => ⌫
     if (logicalKey == LogicalKeyboardKey.backspace) {
-      buttonTapped('DEL');
+      buttonTapped('⌫');
       return KeyEventResult.handled;
     }
 
@@ -285,35 +288,38 @@ class _GamePageState extends State<GamePage> {
 
     _gameService = GameService();
 
-    // Delay to get context for ModalRoute
-    Future.microtask(() {
-      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-      if (args != null && args['mode'] != null && args['mode'] is GameMode) {
-        setState(() {
-          mode = args['mode'] as GameMode;
-        });
+    // After first frame, grab focus so physical keyboard works immediately.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _keyboardFocusNode.requestFocus();
       }
-
-      _gameService.start(mode: mode);
-
-      if (mode == GameMode.practice) {
-        timerStream = Stream.empty();
-      } else {
-        // Start the timer and play countdown sound for timed mode
-        timerStream = Stream.periodic(const Duration(seconds: 1), (x) => x).take(secondsLeft);
-        AudioService().playCountdownSound();
-      }
-
-      // After first frame, grab focus so physical keyboard works immediately
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _keyboardFocusNode.requestFocus();
-        }
-      });
-
-      // Ensure initial question is shown.
-      setState(() {});
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (_gameStarted) return;
+
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    if (args != null && args['mode'] is GameMode) {
+      mode = args['mode'] as GameMode;
+    }
+
+    _gameService.start(mode: mode);
+
+    if (mode == GameMode.practice) {
+      timerStream = Stream.empty();
+    } else {
+      // Start the timer and play countdown sound for timed mode
+      timerStream = Stream.periodic(const Duration(seconds: 1), (x) => x).take(secondsLeft);
+      AudioService().playCountdownSound();
+    }
+
+    _gameStarted = true;
+    // Make sure first question shows.
+    setState(() {});
   }
 
   // Header styling
@@ -454,6 +460,15 @@ class _GamePageState extends State<GamePage> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_gameStarted || !_gameService.hasState) {
+      return const Scaffold(
+        backgroundColor: Colors.deepPurple,
+        body: Center(
+          child: CircularProgressIndicator(color: Colors.white),
+        ),
+      );
+    }
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -471,36 +486,101 @@ class _GamePageState extends State<GamePage> {
               _buildHeader(context),
               Expanded(
                 child: Center(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    constraints: const BoxConstraints(maxWidth: 520),
+                    decoration: BoxDecoration(
+                      // LCD-like background
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          const Color(0xFFE7F2E6),
+                          const Color(0xFFCFE3CF),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.black.withValues(alpha: 0.35), width: 1.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.25),
+                          blurRadius: 10,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    spacing: 5,
+                      mainAxisSize: MainAxisSize.min,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '$numberA ${mathOperations[operation]} $numberB = ',
-                            style: whiteTextStyle,
+                        // Bezel line
+                        Container(
+                          height: 2,
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(2),
                           ),
-                          Container(
-                            height: 50,
-                            width: 100,
-                            decoration: BoxDecoration(
-                              color: Colors.deepPurple[400],
-                              borderRadius: BorderRadius.circular(4),
+                        ),
+                      Row(
+                          // mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                            Expanded(
+                              child: Text(
+                            '$numberA ${mathOperations[operation]} $numberB = ',
+                                style: segment14TextStyle.copyWith(
+                                  color: const Color(0xFF1B2A1B),
+                                  letterSpacing: 1.2,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                          ),
                             ),
-                            child: Center(
-                              child: Text(userAnswer, style: whiteTextStyle),
+                            const SizedBox(width: 4),
+                          Container(
+                              height: 54,
+                              width: 120,
+                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                            decoration: BoxDecoration(
+                                color: const Color(0xFF0F1A0F).withValues(alpha: 0.10),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.black.withValues(alpha: 0.35),
+                                  width: 1,
+                                ),
+                            ),
+                              alignment: Alignment.centerRight,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerRight,
+                                child: Text(
+                                  userAnswer.isEmpty ? '0' : userAnswer,
+                                  style: segment7TextStyle.copyWith(
+                                    color: const Color(0xFF0F2A0F),
+                                    letterSpacing: 2.0,
+                                  ),
+                                  maxLines: 1,
+                                ),
                             ),
                           ),
                         ],
                       ),
-                      if (operation == MathOperation.divide)
-                        Text(
+                        if (operation == MathOperation.divide) ...[
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
                           'Give the result without remainder',
-                          style: greyTextStyle,
+                              style: greyTextStyle.copyWith(
+                                color: Colors.black.withValues(alpha: 0.55),
+                              ),
+                            ),
                         ),
                     ],
+                      ],
+                    ),
                   ),
                 ),
               ),

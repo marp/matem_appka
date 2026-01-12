@@ -38,3 +38,16 @@ var greyTextStyle = const TextStyle(
   color: Colors.white70,
 );
 
+var segment7TextStyle = const TextStyle(
+  fontFamily: 'DSEG7Modern',
+  fontWeight: FontWeight.bold,
+  fontSize: 32,
+  color: Colors.black87,
+);
+
+var segment14TextStyle = const TextStyle(
+  fontFamily: 'DSEG14Modern',
+  fontWeight: FontWeight.bold,
+  fontSize: 32,
+  color: Colors.black87,
+);

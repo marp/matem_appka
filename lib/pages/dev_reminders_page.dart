@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../services/notification_service.dart';
 
@@ -17,7 +19,9 @@ class _DevRemindersPageState extends State<DevRemindersPage> {
       TextEditingController(text: '5');
   String _lastActionLog = 'No actions yet';
   bool _isSending = false;
-  bool? _hasPermission;
+  Map<Permission, PermissionStatus> _permissionStatus = {};
+  DateTime? _nextReminderDate;
+  List<PendingNotificationRequest> _pendingNotifications = [];
 
   final NotificationService _notificationService = NotificationService();
 
@@ -25,6 +29,8 @@ class _DevRemindersPageState extends State<DevRemindersPage> {
   void initState() {
     super.initState();
     _loadPermissionStatus();
+    _loadNextReminderDate();
+    _loadPendingNotifications();
   }
 
   @override
@@ -33,19 +39,37 @@ class _DevRemindersPageState extends State<DevRemindersPage> {
     super.dispose();
   }
 
+  Future<void> _loadPendingNotifications() async {
+    final pending = await _notificationService.getPendingNotifications();
+    if (mounted) {
+      setState(() {
+        _pendingNotifications = pending;
+      });
+    }
+  }
+
+  Future<void> _loadNextReminderDate() async {
+    final nextDate = await _notificationService.getNextReminderDate();
+    if (mounted) {
+      setState(() {
+        _nextReminderDate = nextDate;
+      });
+    }
+  }
+
   Future<void> _loadPermissionStatus() async {
     try {
-      final granted = await _notificationService.hasPermission();
+      final status = await _notificationService.getPermissionsStatus();
       if (mounted) {
         setState(() {
-          _hasPermission = granted;
+          _permissionStatus = status;
         });
       }
     } catch (e, s) {
       debugPrint('Error while checking notification permission: $e\n$s');
       if (mounted) {
         setState(() {
-          _hasPermission = null;
+          _permissionStatus = {};
         });
       }
     }
@@ -77,6 +101,7 @@ class _DevRemindersPageState extends State<DevRemindersPage> {
         });
       }
     }
+    _loadPendingNotifications();
   }
 
   Future<void> _scheduleDelayedTestNotification() async {
@@ -114,6 +139,7 @@ class _DevRemindersPageState extends State<DevRemindersPage> {
         });
       }
     }
+    _loadPendingNotifications();
   }
 
   Future<void> _cancelAllNotifications() async {
@@ -128,6 +154,9 @@ class _DevRemindersPageState extends State<DevRemindersPage> {
         _lastActionLog =
             'Cancelled all scheduled and active notifications.';
       });
+      // Refresh the next reminder date after cancelling
+      await _loadNextReminderDate();
+      await _loadPendingNotifications();
     } catch (e, s) {
       debugPrint('Error while cancelling notifications: $e\n$s');
       setState(() {
@@ -140,6 +169,13 @@ class _DevRemindersPageState extends State<DevRemindersPage> {
         });
       }
     }
+  }
+
+  String _formatDuration(Duration d) {
+    if (d.inDays >= 1) return '${d.inDays}d';
+    if (d.inHours >= 1) return '${d.inHours}h';
+    if (d.inMinutes >= 1) return '${d.inMinutes}m';
+    return '${d.inSeconds}s';
   }
 
   @override
@@ -165,18 +201,47 @@ class _DevRemindersPageState extends State<DevRemindersPage> {
               'Developer screen for testing notifications (reminders).',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
+            const Text('Next scheduled lesson reminder:'),
+            if (_nextReminderDate == null)
+              const Text('Reminders are off or no reminder scheduled.')
+            else
+              StreamBuilder<DateTime>(
+                stream: Stream<DateTime>.periodic(
+                  const Duration(seconds: 1),
+                  (_) => DateTime.now(),
+                ),
+                builder: (context, _) {
+                  final now = DateTime.now();
+                  final diff = _nextReminderDate!.difference(now);
+                  final safe = diff.isNegative ? Duration.zero : diff;
+
+                  return Text(
+                    '${_nextReminderDate!.toIso8601String()} (local time) \u2014 in ${_formatDuration(safe)}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+                  );
+                },
+              ),
             Row(
               children: [
-                const Text('Notification permission: '),
-                if (_hasPermission == null)
+                const Text('Permissions: '),
+                if (_permissionStatus.isEmpty)
                   const Text('checking...',
                       style: TextStyle(color: Colors.orange))
-                else if (_hasPermission == true)
-                  const Text('granted',
-                      style: TextStyle(color: Colors.green))
                 else
-                  const Text('denied', style: TextStyle(color: Colors.red)),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: _permissionStatus.entries.map((entry) {
+                      final permission = entry.key;
+                      final status = entry.value;
+                      return Text(
+                        '${permission.toString().split('.').last}: ${status.name}',
+                        style: TextStyle(
+                          color: status.isGranted ? Colors.green : Colors.red,
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 const SizedBox(width: 8),
                 TextButton(
                   onPressed: _loadPermissionStatus,
@@ -232,6 +297,49 @@ class _DevRemindersPageState extends State<DevRemindersPage> {
               _lastActionLog,
               style: const TextStyle(fontSize: 12),
             ),
+            const SizedBox(height: 16),
+            const Divider(),
+            Row(
+              children: [
+                const Text(
+                  'Pending notifications',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: _loadPendingNotifications,
+                ),
+              ],
+            ),
+            if (_pendingNotifications.isEmpty)
+              const Text('No pending notifications.')
+            else
+              for (final p in _pendingNotifications)
+                StreamBuilder<DateTime>(
+                  stream: Stream<DateTime>.periodic(
+                    const Duration(seconds: 1),
+                    (_) => DateTime.now(),
+                  ),
+                  builder: (context, _) {
+                    final scheduledTime = p.payload;
+                    if (scheduledTime == null) {
+                      return Text(
+                        'ID ${p.id}: "${p.title}" (no schedule date)',
+                        style: const TextStyle(fontSize: 12),
+                      );
+                    }
+                    final now = DateTime.now();
+                    final scheduledDt = DateTime.tryParse(scheduledTime);
+                    final diff = (scheduledDt?.toLocal() ?? now).difference(now);
+                    final safe = diff.isNegative ? Duration.zero : diff;
+
+                    return Text(
+                      'ID ${p.id}: "${p.title}" at ${scheduledTime} \u2014 in ${_formatDuration(safe)}',
+                      style: const TextStyle(fontSize: 12),
+                    );
+                  },
+                ),
           ],
         ),
       ),

@@ -13,9 +13,24 @@ import 'package:matem_appka/services/audio_service.dart';
 import 'package:matem_appka/services/streak_service.dart';
 import 'package:matem_appka/services/xp_service.dart';
 import 'package:matem_appka/services/activity_service.dart';
+import 'package:matem_appka/services/notification_service.dart';
+import 'package:flutter_background/flutter_background.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  final androidConfig = FlutterBackgroundAndroidConfig(
+    notificationTitle: "MatemAppka",
+    notificationText: "Application works in background to handle notifications.",
+    notificationImportance: AndroidNotificationImportance.normal,
+    notificationIcon: AndroidResource(name: 'ic_launcher', defType: 'mipmap'),
+  );
+  await FlutterBackground.initialize(androidConfig: androidConfig);
+  await FlutterBackground.enableBackgroundExecution();
+
+  // Ensure reminders (if enabled) are scheduled.
+  await NotificationService().rescheduleIfEnabled();
+
   await AudioService().initialize();
   await AudioService().playBackgroundMusic();
   await StreakService().initialize();

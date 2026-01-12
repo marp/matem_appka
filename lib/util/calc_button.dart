@@ -43,7 +43,7 @@ class _CalcButtonState extends State<CalcButton> with SingleTickerProviderStateM
 
     if (widget.child == 'C') {
       buttonColor = Colors.red;
-    } else if (widget.child == 'DEL') {
+    } else if (widget.child == '⌫') {
       buttonColor = Colors.green;
     } else if (widget.child == '=') {
       buttonColor = Colors.deepPurple;
