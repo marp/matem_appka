@@ -335,7 +335,7 @@ class _DevRemindersPageState extends State<DevRemindersPage> {
                     final safe = diff.isNegative ? Duration.zero : diff;
 
                     return Text(
-                      'ID ${p.id}: "${p.title}" at ${scheduledTime} \u2014 in ${_formatDuration(safe)}',
+                      'ID ${p.id}: "${p.title}" at $scheduledTime \u2014 in ${_formatDuration(safe)}',
                       style: const TextStyle(fontSize: 12),
                     );
                   },

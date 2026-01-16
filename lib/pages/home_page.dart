@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../const/game.dart';
@@ -15,7 +14,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentStreak = 0;
-  int _bestStreak = 0;
   int _currentXp = 0;
   bool _isStreakPressed = false;
   bool _todayStreakDone = false;
@@ -53,7 +51,6 @@ class _HomePageState extends State<HomePage> {
 
     setState(() {
       _currentStreak = streakService.currentStreak;
-      _bestStreak = streakService.bestStreak;
       _currentXp = xpService.currentXp;
       _todayStreakDone = lastPlayed == todayStr;
     });
@@ -283,7 +280,7 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                   modeButton(
-                    'Pass \& Play',
+                    'Pass & Play',
                     'Challenge your friends',
                     Icons.people,
                     Color(0xFFFF8306),

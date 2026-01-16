@@ -8,7 +8,7 @@ class CalcButton extends StatefulWidget {
 
   final double height;
 
-  CalcButton({
+  const CalcButton({
     super.key,
     required this.child,
     required this.onTap,
@@ -16,7 +16,7 @@ class CalcButton extends StatefulWidget {
   });
 
   @override
-  _CalcButtonState createState() => _CalcButtonState();
+  State<CalcButton> createState() => _CalcButtonState();
 }
 
 class _CalcButtonState extends State<CalcButton> with SingleTickerProviderStateMixin {

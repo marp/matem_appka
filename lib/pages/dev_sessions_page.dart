@@ -41,7 +41,7 @@ class _DevSessionsPageState extends State<DevSessionsPage> {
               Text('Now: ${_dateFormat.format(DateTime.now())}'),
               const SizedBox(height: 12),
               DropdownButtonFormField<GameMode>(
-                value: selectedMode,
+                initialValue: selectedMode,
                 decoration: const InputDecoration(labelText: 'Game mode'),
                 items: GameMode.values
                     .map(

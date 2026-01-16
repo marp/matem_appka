@@ -17,18 +17,20 @@ class _AboutPageState extends State<AboutPage> {
     _loadAppInfo();
   }
 
+  String appTitle = '';
   String appVersion = '';
 
   Future<void> _loadAppInfo() async {
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
 
     String appName = packageInfo.appName;
-    String packageName = packageInfo.packageName;
+    // String packageName = packageInfo.packageName;
     String version = packageInfo.version;
     String buildNumber = packageInfo.buildNumber;
 
     setState(() {
       appVersion = 'Version: $version (Build $buildNumber)';
+      appTitle = appName;
     });
   }
 
@@ -47,8 +49,8 @@ class _AboutPageState extends State<AboutPage> {
               width: 100,
               height: 100,
             ),
-            const Text(
-              'Matem Appka',
+            Text(
+              appTitle,
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),

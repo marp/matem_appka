@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -212,8 +210,8 @@ class NotificationService {
 
     await _plugin.zonedSchedule(
       9991,
-      'Test reminder (zaplanowany)',
-      'To jest testowe powiadomienie zaplanowane.',
+      'Test reminder (planned)',
+      'This is a scheduled testing notification.',
       tz.TZDateTime.now(tz.local).add(delay),
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,

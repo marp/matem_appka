@@ -78,7 +78,7 @@ class _GamePageState extends State<GamePage> {
           if (userAnswer.startsWith('-')) {
             userAnswer = userAnswer.substring(1); // remove leading '-'
           } else {
-            userAnswer = '-' + userAnswer; // add leading '-'
+            userAnswer = '-$userAnswer'; // add leading '-'
           }
         }
       } else if (button == '⌫') {

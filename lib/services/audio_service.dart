@@ -1,4 +1,5 @@
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AudioService {
@@ -31,7 +32,7 @@ class AudioService {
         await _musicPlayer.play(AssetSource('music/stupid-joke-indian-comedy-musicby-roshan-cariappa-117375.mp3'));
         _isMusicPlaying = true;
       } catch (e) {
-        print('Error playing background music: $e');
+        debugPrint('Error playing background music: $e');
       }
     }
   }
@@ -79,7 +80,7 @@ class AudioService {
       await _effectsPlayer.stop();
       await _effectsPlayer.play(AssetSource(relativeAssetPath));
     } catch (e) {
-      print('Error playing sound effect $relativeAssetPath: $e');
+      debugPrint('Error playing sound effect $relativeAssetPath: $e');
     }
   }
 
