@@ -7,37 +7,68 @@ import 'package:matem_appka/main.dart';
 import 'package:matem_appka/pages/settings_page.dart';
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  setUp(() {
-    // HomePage redirects to /welcome on first launch.
-    // In integration tests we want to land on the main menu.
+  Future<void> _setTestSurfaceSize(WidgetTester tester) async {
+    // Big enough to avoid overflows / tiny default constraints.
+    await tester.binding.setSurfaceSize(const Size(1080, 1920));
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+
+    // Some widgets depend on MediaQuery pixel ratio.
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetDevicePixelRatio();
+    });
+  }
+
+  Future<void> _launchApp(WidgetTester tester) async {
+    await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> _openSettings(WidgetTester tester) async {
+    final settingsButton = find.byIcon(Icons.settings);
+
+    // Prefer user-like interaction. If the icon is not found, fail with a clear expectation.
+    expect(settingsButton, findsOneWidget);
+    await tester.tap(settingsButton);
+    await tester.pumpAndSettle();
+  }
+
+  void _expectMainMenu() {
+    // Keep this assertion minimal to reduce localization coupling.
+    // If your UI is localized and this becomes flaky, switch to a Key-based finder.
+    expect(find.text('Play'), findsOneWidget);
+  }
+
+  void _expectSettingsScreen() {
+    expect(find.byType(SettingsPage), findsOneWidget);
+
+    // Optional “anchor” for extra certainty. If the app is localized, consider replacing
+    // this with a Key on the Settings AppBar/title.
+    expect(find.textContaining('Settings'), findsWidgets);
+  }
+
+  setUpAll(() {
+    // Ensure the app does not redirect to /welcome (first launch flow) during tests.
     SharedPreferences.setMockInitialValues(<String, Object>{
       'is_first_launch': false,
     });
+
+    // Keep the binding referenced to prevent tree-shaking complaints in some setups.
+    // ignore: unnecessary_statements
+    binding;
   });
 
-  testWidgets('App starts and can open Settings', (WidgetTester tester) async {
-    // A slightly larger surface helps avoid overflows on smaller defaults.
-    tester.view.physicalSize = const Size(1080, 1920);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
+  testWidgets('opens Settings from main menu', (WidgetTester tester) async {
+    await _setTestSurfaceSize(tester);
 
-    await tester.pumpWidget(const MyApp());
-    await tester.pumpAndSettle();
+    await _launchApp(tester);
+    _expectMainMenu();
 
-    // Smoke-check: main menu visible.
-    expect(find.text('Play'), findsOneWidget);
-
-    // Open settings.
-    expect(find.byIcon(Icons.settings), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.settings));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(SettingsPage), findsOneWidget);
+    await _openSettings(tester);
+    _expectSettingsScreen();
   });
 }
-

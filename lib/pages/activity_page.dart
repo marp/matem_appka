@@ -74,8 +74,6 @@ class _ActivityPageState extends State<ActivityPage> {
                   const SizedBox(height: 8),
                   Text("Experience", style: headerText),
                   _buildWeeklyActivityChart(),
-                  // const SizedBox(height: 24),
-                  // _buildCategoryPieChart(),
                 ],
               ),
             ),
