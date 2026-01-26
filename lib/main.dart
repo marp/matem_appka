@@ -15,18 +15,10 @@ import 'package:matem_appka/services/xp_service.dart';
 import 'package:matem_appka/services/activity_service.dart';
 import 'package:matem_appka/services/notification_service.dart';
 import 'package:flutter_background/flutter_background.dart';
+import 'dart:io' show Platform;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  final androidConfig = FlutterBackgroundAndroidConfig(
-    notificationTitle: "MatemAppka",
-    notificationText: "Application works in background to handle notifications.",
-    notificationImportance: AndroidNotificationImportance.normal,
-    notificationIcon: AndroidResource(name: 'ic_launcher', defType: 'mipmap'),
-  );
-  await FlutterBackground.initialize(androidConfig: androidConfig);
-  await FlutterBackground.enableBackgroundExecution();
 
   // Ensure reminders (if enabled) are scheduled.
   await NotificationService().rescheduleIfEnabled();
