@@ -13,15 +13,15 @@ import 'package:matem_appka/services/audio_service.dart';
 import 'package:matem_appka/services/streak_service.dart';
 import 'package:matem_appka/services/xp_service.dart';
 import 'package:matem_appka/services/activity_service.dart';
-import 'package:matem_appka/services/notification_service.dart';
-import 'package:flutter_background/flutter_background.dart';
-import 'dart:io' show Platform;
+// import 'package:matem_appka/services/notification_service.dart';
+// import 'package:flutter_background/flutter_background.dart';
+// import 'dart:io' show Platform;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Ensure reminders (if enabled) are scheduled.
-  await NotificationService().rescheduleIfEnabled();
+  // await NotificationService().rescheduleIfEnabled();
 
   await AudioService().initialize();
   await AudioService().playBackgroundMusic();

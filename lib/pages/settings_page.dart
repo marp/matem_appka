@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:matem_appka/services/audio_service.dart';
 import 'package:matem_appka/services/xp_service.dart';
 import 'package:matem_appka/services/activity_service.dart';
-import 'package:matem_appka/models/reminder_frequency.dart';
-import 'package:matem_appka/services/notification_service.dart';
+// import 'package:matem_appka/models/reminder_frequency.dart';
+// import 'package:matem_appka/services/notification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -16,16 +16,16 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   bool isMusicEnabled = true;
   bool isSoundEffectsEnabled = true;
-  bool _notificationsEnabled = false;
+  // bool _notificationsEnabled = false;
 
   Future<void> _loadSettings() async {
     final audioService = AudioService();
-    final notificationService = NotificationService();
-    final reminderFrequency = await notificationService.loadReminderFrequency();
+    // final notificationService = NotificationService();
+    // final reminderFrequency = await notificationService.loadReminderFrequency();
     setState(() {
       isMusicEnabled = audioService.isMusicEnabled;
       isSoundEffectsEnabled = audioService.isSoundEffectsEnabled;
-      _notificationsEnabled = reminderFrequency == ReminderFrequency.everyDay;
+      // _notificationsEnabled = reminderFrequency == ReminderFrequency.everyDay;
     });
   }
 
@@ -72,18 +72,18 @@ class _SettingsPageState extends State<SettingsPage> {
       await audioService.setSoundEffectsEnabled(true);
 
       // Reset notifications: turn off daily reminders
-      final notificationService = NotificationService();
-      await notificationService
-          .saveReminderFrequency(ReminderFrequency.off);
-      await notificationService
-          .scheduleLessonReminders(ReminderFrequency.off);
+      // final notificationService = NotificationService();
+      // await notificationService
+      //     .saveReminderFrequency(ReminderFrequency.off);
+      // await notificationService
+      //     .scheduleLessonReminders(ReminderFrequency.off);
 
       if (!mounted) return;
 
       setState(() {
         isMusicEnabled = audioService.isMusicEnabled;
         isSoundEffectsEnabled = audioService.isSoundEffectsEnabled;
-        _notificationsEnabled = false;
+        // _notificationsEnabled = false;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -129,7 +129,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 await AudioService().setSoundEffectsEnabled(value);
               },
             ),
-            const Divider(),
+/*            const Divider(),
             SwitchListTile(
               title: const Text('Daily lesson reminders'),
               subtitle:
@@ -170,7 +170,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 await notificationService.saveReminderFrequency(frequency);
                 await notificationService.scheduleLessonReminders(frequency);
               },
-            ),
+            ),*/
             const Divider(),
             ListTile(
               leading:

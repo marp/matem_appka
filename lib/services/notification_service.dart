@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import '../models/reminder_frequency.dart';
+import 'dart:typed_data';
 
 @pragma('vm:entry-point')
 void notificationTapBackground(NotificationResponse notificationResponse) {
@@ -43,7 +44,7 @@ class NotificationService {
     );
 
     await _plugin.initialize(
-      initSettings,
+      settings: initSettings,
       onDidReceiveNotificationResponse: (notificationResponse) async {
         // Handle notification tapped logic here
         debugPrint('notification tapped: ${notificationResponse.payload}');
@@ -132,11 +133,11 @@ class NotificationService {
     final useExactAlarm = scheduleExactAlarmStatus.isGranted;
 
     await _plugin.zonedSchedule(
-      _lessonReminderNotificationId,
-      "Don't lose your streak!",
-      'Take a short lesson now and keep your progress going.',
-      scheduledDate,
-      notificationDetails,
+      id: _lessonReminderNotificationId,
+      title: 'Don\`t lose your streak\!',
+      body: 'Take a short lesson now and keep your progress going\.',
+      scheduledDate: scheduledDate,
+      notificationDetails: notificationDetails,
       androidScheduleMode: useExactAlarm
           ? AndroidScheduleMode.exactAllowWhileIdle
           : AndroidScheduleMode.inexact,
@@ -185,7 +186,9 @@ class NotificationService {
 
   Future<void> cancelLessonReminders() async {
     await init();
-    await _plugin.cancel(_lessonReminderNotificationId);
+    await _plugin.cancel(
+      id: _lessonReminderNotificationId
+    );
   }
 
   Future<void> scheduleTestNotificationAfter(Duration delay) async {
@@ -209,13 +212,13 @@ class NotificationService {
     );
 
     await _plugin.zonedSchedule(
-      9991,
-      'Test reminder (planned)',
-      'This is a scheduled testing notification.',
-      tz.TZDateTime.now(tz.local).add(delay),
-        notificationDetails,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        payload: tz.TZDateTime.now(tz.local).add(delay).toString()
+      id: 9991,
+      title: 'Test reminder (planned)',
+      body: 'This is a scheduled testing notification.',
+      scheduledDate: tz.TZDateTime.now(tz.local).add(delay),
+      notificationDetails: notificationDetails,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      payload: tz.TZDateTime.now(tz.local).add(delay).toString(),
     );
   }
 
@@ -245,10 +248,10 @@ class NotificationService {
     );
 
     await _plugin.show(
-      9990,
-      'Test reminder',
-      'This is immediate testing notification.',
-      notificationDetails,
+      id: 9990,
+      title: 'Test reminder',
+      body: 'This is immediate testing notification.',
+      notificationDetails: notificationDetails
     );
   }
 
