@@ -13,9 +13,11 @@ class AudioService {
   bool _isMusicEnabled = true;
   bool _isSoundEffectsEnabled = true;
   bool _isMusicPlaying = false;
+  bool _pausedByLifecycle = false;
 
   bool get isMusicEnabled => _isMusicEnabled;
   bool get isSoundEffectsEnabled => _isSoundEffectsEnabled;
+  bool get isMusicPlaying => _isMusicPlaying;
 
   Future<void> initialize() async {
     final prefs = await SharedPreferences.getInstance();
@@ -31,6 +33,7 @@ class AudioService {
       try {
         await _musicPlayer.play(AssetSource('music/stupid-joke-indian-comedy-musicby-roshan-cariappa-117375.mp3'));
         _isMusicPlaying = true;
+        _pausedByLifecycle = false;
       } catch (e) {
         debugPrint('Error playing background music: $e');
       }
@@ -44,9 +47,28 @@ class AudioService {
     }
   }
 
+  /// Called when the app goes to background / becomes inactive.
+  /// We pause (not stop) so we can resume on return.
+  Future<void> handleAppPaused() async {
+    if (!_isMusicPlaying) return;
+    await pauseBackgroundMusic();
+    _pausedByLifecycle = true;
+  }
+
+  /// Called when the app comes back to foreground.
+  /// Resume only if we paused it due to lifecycle *and* user has music enabled.
+  Future<void> handleAppResumed() async {
+    if (!_pausedByLifecycle) return;
+    _pausedByLifecycle = false;
+    if (_isMusicEnabled) {
+      await resumeBackgroundMusic();
+    }
+  }
+
   Future<void> stopBackgroundMusic() async {
     await _musicPlayer.stop();
     _isMusicPlaying = false;
+    _pausedByLifecycle = false;
   }
 
   Future<void> resumeBackgroundMusic() async {
@@ -65,6 +87,7 @@ class AudioService {
       await playBackgroundMusic();
     } else {
       await pauseBackgroundMusic();
+      _pausedByLifecycle = false;
     }
   }
 
@@ -109,4 +132,3 @@ class AudioService {
     _effectsPlayer.dispose();
   }
 }
-

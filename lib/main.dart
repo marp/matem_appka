@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:matem_appka/pages/about_page.dart';
 import 'package:matem_appka/pages/activity_page.dart';
 import 'package:matem_appka/pages/dev_index_page.dart';
@@ -20,6 +21,21 @@ import 'package:matem_appka/services/activity_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Allow drawing behind system bars (status + navigation).
+  // We'll handle spacing using SafeArea/padding in the UI.
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+  // System status bar (top overlay) styling.
+  // If you prefer a different color, change `statusBarColor`.
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light, // Android icons
+    statusBarBrightness: Brightness.dark, // iOS icons
+    systemNavigationBarColor: Colors.transparent,
+    systemNavigationBarIconBrightness: Brightness.light,
+    systemNavigationBarDividerColor: Colors.transparent,
+  ));
+
   // Ensure reminders (if enabled) are scheduled.
   // await NotificationService().rescheduleIfEnabled();
 
@@ -28,7 +44,48 @@ void main() async {
   await StreakService().initialize();
   await XpService().initialize();
   await ActivityService().initialize();
-  runApp(const MyApp());
+  runApp(const LifecycleAudioPause(child: MyApp()));
+}
+
+class LifecycleAudioPause extends StatefulWidget {
+  final Widget child;
+  const LifecycleAudioPause({super.key, required this.child});
+
+  @override
+  State<LifecycleAudioPause> createState() => _LifecycleAudioPauseState();
+}
+
+class _LifecycleAudioPauseState extends State<LifecycleAudioPause>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.detached:
+        AudioService().handleAppPaused();
+        break;
+      case AppLifecycleState.resumed:
+        AudioService().handleAppResumed();
+        break;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 class MyApp extends StatelessWidget {
@@ -57,6 +114,14 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
+        appBarTheme: const AppBarTheme(
+          // Makes status bar match the app styling when an AppBar is present.
+          systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.light,
+            statusBarBrightness: Brightness.dark,
+          ),
+        ),
       ),
       home: const HomePage(),
       routes: {

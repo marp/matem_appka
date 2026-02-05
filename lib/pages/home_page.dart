@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../const/game.dart';
@@ -60,113 +61,166 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width - 80;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF272837),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(0, 40, 0, 20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              Column(
+    const bgColor = Color(0xFF272837);
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light, // Android icons
+        statusBarBrightness: Brightness.dark, // iOS icons
+      ),
+      child: Scaffold(
+        backgroundColor: bgColor,
+        body: SafeArea(
+          top: false,
+          left: false,
+          right: false,
+          bottom: true,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(0, 30, 0, 0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  Image.asset(
-                    'assets/images/logo.png',
-                    width: 100,
-                    height: 100,
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Column(
                     children: [
-                      Text(
-                        'Mat',
-                        style: TextStyle(
-                          fontFamily: GoogleFonts.manrope().fontFamily,
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.none,
-                          fontSize: 42,
-                          color: Colors.white,
-                        ),
+                      Image.asset(
+                        'assets/images/logo.png',
+                        width: 100,
+                        height: 100,
                       ),
-                      Text(
-                        'em',
-                        style: TextStyle(
-                          fontFamily: GoogleFonts.manrope().fontFamily,
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.none,
-                          fontSize: 42,
-                          foreground: Paint()
-                            ..color = Colors.white
-                            ..style = PaintingStyle.stroke
-                            ..strokeWidth = 0.1,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Mat',
+                            style: TextStyle(
+                              fontFamily: GoogleFonts.manrope().fontFamily,
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.none,
+                              fontSize: 42,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            'em',
+                            style: TextStyle(
+                              fontFamily: GoogleFonts.manrope().fontFamily,
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.none,
+                              fontSize: 42,
+                              foreground: Paint()
+                                ..color = Colors.white
+                                ..style = PaintingStyle.stroke
+                                ..strokeWidth = 0.1,
+                            ),
+                          ),
+                          SizedBox(width: 15),
+                          Text(
+                            'App',
+                            style: TextStyle(
+                              fontFamily: GoogleFonts.manrope().fontFamily,
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.none,
+                              fontSize: 42,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            'ka',
+                            style: TextStyle(
+                              fontFamily: GoogleFonts.manrope().fontFamily,
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.none,
+                              fontSize: 42,
+                              foreground: Paint()
+                                ..color = Colors.white
+                                ..style = PaintingStyle.stroke
+                                ..strokeWidth = 0.5,
+                            ),
+                          ),
+                        ],
                       ),
-                      SizedBox(width: 15),
-                      Text(
-                        'App',
-                        style: TextStyle(
-                          fontFamily: GoogleFonts.manrope().fontFamily,
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.none,
-                          fontSize: 42,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Text(
-                        'ka',
-                        style: TextStyle(
-                          fontFamily: GoogleFonts.manrope().fontFamily,
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.none,
-                          fontSize: 42,
-                          foreground: Paint()
-                            ..color = Colors.white
-                            ..style = PaintingStyle.stroke
-                            ..strokeWidth = 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 64),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      GestureDetector(
-                        onTapDown: (_) {
-                          setState(() {
-                            _isStreakPressed = true;
-                          });
-                        },
-                        onTapUp: (_) {
-                          setState(() {
-                            _isStreakPressed = false;
-                          });
-                          Navigator.pushNamed(context, '/activity');
-                        },
-                        onTapCancel: () {
-                          setState(() {
-                            _isStreakPressed = false;
-                          });
-                        },
-                        child: AnimatedScale(
-                          scale: _isStreakPressed ? 0.95 : 1.0,
-                          duration: const Duration(milliseconds: 120),
-                          curve: Curves.easeOut,
-                          child: Container(
+                      const SizedBox(height: 32),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          GestureDetector(
+                            onTapDown: (_) {
+                              setState(() {
+                                _isStreakPressed = true;
+                              });
+                            },
+                            onTapUp: (_) {
+                              setState(() {
+                                _isStreakPressed = false;
+                              });
+                              Navigator.pushNamed(context, '/activity');
+                            },
+                            onTapCancel: () {
+                              setState(() {
+                                _isStreakPressed = false;
+                              });
+                            },
+                            child: AnimatedScale(
+                              scale: _isStreakPressed ? 0.95 : 1.0,
+                              duration: const Duration(milliseconds: 120),
+                              curve: Curves.easeOut,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.orangeAccent,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.whatshot,
+                                        color: Colors.white, size: 18),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'Streak: $_currentStreak days',
+                                      style: const TextStyle(
+                                        fontFamily: 'Manrope',
+                                        fontWeight: FontWeight.bold,
+                                        decoration: TextDecoration.none,
+                                        fontSize: 14,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _todayStreakDone ? 'today ✓' : 'today ✗',
+                                        style: const TextStyle(
+                                          fontFamily: 'Manrope',
+                                          fontWeight: FontWeight.w500,
+                                          decoration: TextDecoration.none,
+                                          fontSize: 12,
+                                          color: Colors.white70,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6),
+                                horizontal: 8, vertical: 6),
                             decoration: BoxDecoration(
-                              color: Colors.orangeAccent,
+                              color: Colors.blueAccent,
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.whatshot,
+                                const Icon(Icons.star_border,
                                     color: Colors.white, size: 18),
                                 const SizedBox(width: 6),
                                 Text(
-                                  'Streak: $_currentStreak days',
+                                  'XP: $_currentXp',
                                   style: const TextStyle(
                                     fontFamily: 'Manrope',
                                     fontWeight: FontWeight.bold,
@@ -175,129 +229,91 @@ class _HomePageState extends State<HomePage> {
                                     color: Colors.white,
                                   ),
                                 ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  _todayStreakDone ? 'today ✓' : 'today ✗',
-                                    style: const TextStyle(
-                                      fontFamily: 'Manrope',
-                                      fontWeight: FontWeight.w500,
-                                      decoration: TextDecoration.none,
-                                      fontSize: 12,
-                                      color: Colors.white70,
-                                    ),
-                                  ),
+                                const SizedBox(width: 4),
                               ],
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                      const SizedBox(width: 16),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.blueAccent,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.star_border,
-                                color: Colors.white, size: 18),
-                            const SizedBox(width: 6),
-                            Text(
-                              'XP: $_currentXp',
-                              style: const TextStyle(
-                                fontFamily: 'Manrope',
-                                fontWeight: FontWeight.bold,
-                                decoration: TextDecoration.none,
-                                fontSize: 14,
-                                color: Colors.white,
-                              ),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      circButton(Icons.info, () {
+                        Navigator.pushNamed(context, '/about');
+                      }),
+                      circButton(Icons.sports_score_sharp, () {
+                        Navigator.pushNamed(context, '/highScores');
+                      }),
+                      // circButton(Icons.lightbulb, () {
+                      // }),
+                      circButton(Icons.settings, () {
+                        Navigator.pushNamed(context, '/settings');
+                      }),
+                      circButton(Icons.bug_report, () {
+                        Navigator.pushNamed(context, '/dev/index');
+                      }),
+                    ],
+                  ),
+                  Wrap(
+                    runSpacing: 16,
+                    children: [
+                      modeButton(
+                        'Play',
+                        'Elevate your level',
+                        Icons.play_arrow,
+                        Color(0xFF2F80ED),
+                        width,
+                        () {
+                          Navigator.pushNamed(context, '/game',
+                              arguments: {'mode': GameMode.play});
+                        },
+                      ),
+                      modeButton(
+                        'Time Trial',
+                        'Race against the clock',
+                        Icons.timer_outlined,
+                        Color(0xFFDF1D5A),
+                        width,
+                        () {
+                          Navigator.pushNamed(context, '/game',
+                              arguments: {'mode': GameMode.timetrial});
+                        },
+                      ),
+                      modeButton(
+                        'Practice',
+                        'Train without stress',
+                        Icons.check_circle,
+                        Color(0xFF45D280),
+                        width,
+                        () {
+                          Navigator.pushNamed(context, '/game',
+                              arguments: {'mode': GameMode.practice});
+                        },
+                      ),
+                      modeButton(
+                        'Pass & Play',
+                        'Challenge your friends',
+                        Icons.people,
+                        Color(0xFFFF8306),
+                        width,
+                        () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                  'This mode is coming soon! Stay tuned.'),
+                              duration: Duration(seconds: 2),
                             ),
-                            const SizedBox(width: 4),
-                          ],
-                        ),
+                          );
+                        },
                       ),
                     ],
                   ),
                 ],
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  circButton(Icons.info, () {
-                    Navigator.pushNamed(context, '/about');
-                  }),
-                  circButton(Icons.sports_score_sharp, () {
-                    Navigator.pushNamed(context, '/highScores');
-                  }),
-                  // circButton(Icons.lightbulb, () {
-                  // }),
-                  circButton(Icons.settings, () {
-                    Navigator.pushNamed(context, '/settings');
-                  }),
-                  circButton(Icons.bug_report, () {
-                    Navigator.pushNamed(context, '/dev/index');
-                  }),
-                ],
-              ),
-              Wrap(
-                runSpacing: 16,
-                children: [
-                  modeButton(
-                    'Play',
-                    'Elevate your level',
-                    Icons.play_arrow,
-                    Color(0xFF2F80ED),
-                    width,
-                    () {
-                      Navigator.pushNamed(context, '/game',
-                          arguments: {'mode': GameMode.play});
-                    },
-                  ),
-                  modeButton(
-                    'Time Trial',
-                    'Race against the clock',
-                    Icons.timer_outlined,
-                    Color(0xFFDF1D5A),
-                    width,
-                    () {
-                      Navigator.pushNamed(context, '/game',
-                          arguments: {'mode': GameMode.timetrial});
-                    },
-                  ),
-                  modeButton(
-                    'Practice',
-                    'Practice alone',
-                    Icons.check_circle,
-                    Color(0xFF45D280),
-                    width,
-                    () {
-                      Navigator.pushNamed(context, '/game',
-                          arguments: {'mode': GameMode.practice});
-                    },
-                  ),
-                  modeButton(
-                    'Pass & Play',
-                    'Challenge your friends',
-                    Icons.people,
-                    Color(0xFFFF8306),
-                    width,
-                    () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                              'This mode is coming soon! Stay tuned.'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
         ),
       ),

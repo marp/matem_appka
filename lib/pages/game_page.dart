@@ -8,6 +8,7 @@ import 'package:matem_appka/services/audio_service.dart';
 import 'package:matem_appka/services/xp_service.dart';
 import 'package:matem_appka/services/activity_service.dart';
 import 'package:matem_appka/services/game_service.dart';
+import 'package:matem_appka/pages/widgets/game_header.dart';
 
 import '../const/colors.dart';
 import '../model/game_session.dart';
@@ -322,142 +323,6 @@ class _GamePageState extends State<GamePage> {
     setState(() {});
   }
 
-  // Header styling
-  static const double _headerHeight = 125;
-
-  Widget _statChip({
-    required IconData icon,
-    required String value,
-    required Color iconColor,
-  }) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Slightly more compact on narrow layouts.
-        final isNarrow = MediaQuery.sizeOf(context).width < 380;
-        final horizontal = isNarrow ? 10.0 : 12.0;
-        final vertical = isNarrow ? 8.0 : 10.0;
-        final gap = isNarrow ? 8.0 : 10.0;
-        // final iconSize = isNarrow ? 18.0 : 20.0;
-        final iconSize = 24.0;
-        final valueSize = isNarrow ? 24.0 : 26.0;
-
-        return Container(
-          padding: EdgeInsets.symmetric(horizontal: horizontal, vertical: vertical),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: iconColor, size: iconSize),
-              SizedBox(width: gap),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Prevent value text from overflowing (e.g. long time)
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      value,
-                      style: whiteBoldedText.copyWith(fontSize: valueSize, height: 1.0),
-                      maxLines: 1,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Container(
-      height: _headerHeight,
-      color: Colors.deepPurple,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: SafeArea(
-        bottom: false,
-        child: Center(
-          child: StreamBuilder<int>(
-            stream: mode == GameMode.practice ? Stream<int>.empty() : timerStream,
-            builder: (context, snapshot) {
-              // Timed modes: end game when timer ends
-              if (mode != GameMode.practice &&
-                  snapshot.hasData &&
-                  snapshot.data == secondsLeft - 1) {
-                Future.microtask(() {
-                  gameOver();
-                });
-              }
-
-              final timeValue = mode == GameMode.practice
-                  ? '∞'
-                  : _formatRemainingTime(snapshot.data);
-
-              final mistakesValue = mode == GameMode.play
-                  ? remainingMistakes.toString()
-                  : '∞';
-
-              return Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white70, size: 26),
-                    onPressed: _showExitConfirmDialog,
-                    tooltip: 'Exit',
-                  ),
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.center,
-                      child: Wrap(
-                        alignment: WrapAlignment.center,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        spacing: 10,
-                        runSpacing: 8,
-                        children: [
-                          _statChip(
-                            icon: Icons.timer,
-                            value: timeValue,
-                            iconColor: Colors.white70,
-                          ),
-                          _statChip(
-                            icon: Icons.error,
-                            value: mistakesValue,
-                            iconColor: Colors.redAccent,
-                          ),
-                          if (mode != GameMode.practice)
-                            _statChip(
-                              icon: Icons.star,
-                              value: score.toString(),
-                              iconColor: Colors.yellow,
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  // Symmetry placeholder (same width as IconButton) so the wrap stays centered.
-                  const SizedBox(width: 40),
-                ],
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _formatRemainingTime(int? elapsedSeconds) {
-    final remainingTime = 120 - (elapsedSeconds ?? 0);
-    final minutes = remainingTime ~/ 60;
-    final seconds = remainingTime % 60;
-    return '$minutes:${seconds.toString().padLeft(2, '0')}';
-  }
-
   @override
   Widget build(BuildContext context) {
     if (!_gameStarted || !_gameService.hasState) {
@@ -483,7 +348,15 @@ class _GamePageState extends State<GamePage> {
           backgroundColor: Colors.deepPurple[300],
           body: Column(
             children: [
-              _buildHeader(context),
+              GameHeader(
+                mode: mode,
+                timerStream: timerStream,
+                secondsLeft: secondsLeft,
+                remainingMistakes: remainingMistakes,
+                score: score,
+                onExit: _showExitConfirmDialog,
+                onTimeExpired: gameOver,
+              ),
               Expanded(
                 child: Center(
                   child: Container(
@@ -646,6 +519,7 @@ class _GamePageState extends State<GamePage> {
             ),
             TextButton(
               onPressed: () {
+
                 Navigator.pushNamed(context, '/home');
               },
               child: const Text("Exit"),
