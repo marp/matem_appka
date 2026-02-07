@@ -21,7 +21,7 @@ class GamePage extends StatefulWidget {
   State<GamePage> createState() => _GamePageState();
 }
 
-class _GamePageState extends State<GamePage> {
+class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin {
   List<String> numberPad = [
     '7',
     '8',
@@ -61,6 +61,11 @@ class _GamePageState extends State<GamePage> {
 
   // Prevent accessing GameService.state before start() runs.
   bool _gameStarted = false;
+
+  // Animacja błysku przy poprawnej odpowiedzi
+  late AnimationController _flashController;
+  late Animation<double> _flashAnimation;
+  Color _flashColor = Colors.green;
 
   int get numberA => _gameService.state.question.a;
   int get numberB => _gameService.state.question.b;
@@ -166,6 +171,10 @@ class _GamePageState extends State<GamePage> {
     if (outcome == AnswerOutcome.correct) {
       AudioService().playCorrectSound();
 
+      // Uruchom animację błysku (zielony)
+      _flashColor = Colors.green;
+      _flashController.forward(from: 0.0);
+
       // No dialog on correct answer: just advance to next question.
       setState(() {
         userAnswer = '';
@@ -176,6 +185,10 @@ class _GamePageState extends State<GamePage> {
 
     // Incorrect or GameOver
     AudioService().playIncorrectSound();
+
+    // Uruchom animację błysku (czerwony)
+    _flashColor = Colors.red;
+    _flashController.forward(from: 0.0);
 
     if (outcome == AnswerOutcome.gameOver) {
       timerStream = Stream.empty();
@@ -296,6 +309,20 @@ class _GamePageState extends State<GamePage> {
 
     _gameService = GameService();
 
+    // Inicjalizacja animacji błysku
+    _flashController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _flashAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _flashController, curve: Curves.easeOut),
+    );
+    _flashController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _flashController.reverse();
+      }
+    });
+
     // After first frame, grab focus so physical keyboard works immediately.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -353,46 +380,61 @@ class _GamePageState extends State<GamePage> {
         onKeyEvent: _handleKeyEvent,
         child: Scaffold(
           backgroundColor: Colors.deepPurple[300],
-          body: Column(
+          body: Stack(
             children: [
-              GameHeader(
-                mode: mode,
-                timerStream: timerStream,
-                secondsLeft: secondsLeft,
-                remainingMistakes: remainingMistakes,
-                score: score,
-                onExit: _showExitConfirmDialog,
-                onTimeExpired: gameOver,
-              ),
-              Expanded(
-                child: Center(
-                  child: QuestionDisplay(
-                    numberA: numberA,
-                    numberB: numberB,
-                    operation: operation,
-                    userAnswer: userAnswer,
+              Column(
+                children: [
+                  GameHeader(
+                    mode: mode,
+                    timerStream: timerStream,
+                    secondsLeft: secondsLeft,
+                    remainingMistakes: remainingMistakes,
+                    score: score,
+                    onExit: _showExitConfirmDialog,
+                    onTimeExpired: gameOver,
                   ),
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(4.0),
-                  child: GridView.builder(
-                    itemCount: numberPad.length,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 4),
-                    itemBuilder: (context, index) {
-                      return CalcButton(
-                        child: numberPad[index],
-                        onTap: () => buttonTapped(numberPad[index]),
-                        height: numberPad[index] == '=' ? 2.0 : 1.0,
-                      );
-                    },
+                  Expanded(
+                    child: Center(
+                      child: QuestionDisplay(
+                        numberA: numberA,
+                        numberB: numberB,
+                        operation: operation,
+                        userAnswer: userAnswer,
+                      ),
+                    ),
                   ),
-                ),
+                  Expanded(
+                    flex: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: GridView.builder(
+                        itemCount: numberPad.length,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 4),
+                        itemBuilder: (context, index) {
+                          return CalcButton(
+                            child: numberPad[index],
+                            onTap: () => buttonTapped(numberPad[index]),
+                            height: numberPad[index] == '=' ? 2.0 : 1.0,
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              // Błysk przy odpowiedzi (zielony = poprawna, czerwony = błędna)
+              AnimatedBuilder(
+                animation: _flashAnimation,
+                builder: (context, child) {
+                  return IgnorePointer(
+                    child: Container(
+                      color: _flashColor.withValues(alpha: _flashAnimation.value * 0.4),
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -405,6 +447,7 @@ class _GamePageState extends State<GamePage> {
   void dispose() {
     BackButtonInterceptor.remove(myInterceptor);
     _keyboardFocusNode.dispose();
+    _flashController.dispose();
     super.dispose();
   }
 

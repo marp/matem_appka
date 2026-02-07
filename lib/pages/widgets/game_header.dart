@@ -84,7 +84,7 @@ class GameHeader extends StatelessWidget {
                           Flexible(
                             child: _statChip(
                               context: context,
-                              icon: Icons.error,
+                              icon: Icons.favorite,
                               value: mistakesValue,
                               iconColor: Colors.redAccent,
                             ),

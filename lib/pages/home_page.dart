@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../const/game.dart';
 import '../services/streak_service.dart';
 import '../services/xp_service.dart';
+import 'widgets/math_particles_background.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -72,8 +73,12 @@ class _HomePageState extends State<HomePage> {
       child: PopScope(
         canPop: false, // Blokuj cofanie się z głównego ekranu
         child: Scaffold(
-          backgroundColor: bgColor,
-          body: SafeArea(
+          backgroundColor: Colors.transparent,
+          body: MathParticlesBackground(
+            backgroundColor: bgColor,
+            particleColor: Colors.white,
+            particleCount: 35,
+            child: SafeArea(
           top: false,
           left: false,
           right: false,
@@ -318,7 +323,8 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ),
-      ),
+          ),
+        ),
       ),
     );
   }
