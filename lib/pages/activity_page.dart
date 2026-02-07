@@ -67,10 +67,8 @@ class _ActivityPageState extends State<ActivityPage> {
                   Text("Overview", style: headerText),
                   _buildSummaryRow(),
                   const SizedBox(height: 8),
-                  Text("Daily activities", style: headerText),
+                  Text("Activity Calendar", style: headerText),
                   _buildCalendarCard(),
-                  const SizedBox(height: 8),
-                  _buildDaySessionsList(),
                   const SizedBox(height: 8),
                   Text("Experience", style: headerText),
                   _buildWeeklyActivityChart(),
@@ -88,48 +86,144 @@ class _ActivityPageState extends State<ActivityPage> {
       margin: EdgeInsets.zero,
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: TableCalendar(
-          firstDay: DateTime.utc(2020, 1, 1),
-          lastDay: DateTime.utc(2030, 12, 31),
-          focusedDay: _focusedDay,
-          selectedDayPredicate: (day) =>
-              _selectedDay != null &&
-              day.year == _selectedDay!.year &&
-              day.month == _selectedDay!.month &&
-              day.day == _selectedDay!.day,
-          calendarFormat: CalendarFormat.month,
-          headerStyle: const HeaderStyle(
-            formatButtonVisible: false,
-            titleCentered: true,
-          ),
-          calendarStyle: CalendarStyle(
-            todayDecoration: BoxDecoration(
-              color: primaryColor,
-              shape: BoxShape.circle,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: TableCalendar(
+              firstDay: DateTime.utc(2020, 1, 1),
+              lastDay: DateTime.utc(2030, 12, 31),
+              focusedDay: _focusedDay,
+              selectedDayPredicate: (day) =>
+                  _selectedDay != null &&
+                  day.year == _selectedDay!.year &&
+                  day.month == _selectedDay!.month &&
+                  day.day == _selectedDay!.day,
+              calendarFormat: CalendarFormat.month,
+              headerStyle: const HeaderStyle(
+                formatButtonVisible: false,
+                titleCentered: true,
+              ),
+              calendarStyle: CalendarStyle(
+                todayDecoration: BoxDecoration(
+                  color: primaryColor,
+                  shape: BoxShape.circle,
+                ),
+                selectedDecoration: BoxDecoration(
+                  color: primaryColor,
+                ),
+              ),
+              eventLoader: (day) {
+                final key = _dayOnly(day);
+                return _sessionsByDay[key] ?? const <GameSession>[];
+              },
+              onDaySelected: (selectedDay, focusedDay) {
+                setState(() {
+                  _selectedDay = selectedDay;
+                  _focusedDay = focusedDay;
+                  _selectedDaySessions =
+                      _activityService.sessionsForDay(selectedDay);
+                });
+              },
+              onPageChanged: (focusedDay) {
+                _focusedDay = focusedDay;
+                _loadActivityData();
+              },
             ),
-            selectedDecoration: BoxDecoration(
-              color: primaryColor,
-            ),
           ),
-          eventLoader: (day) {
-            final key = _dayOnly(day);
-            return _sessionsByDay[key] ?? const <GameSession>[];
-          },
-          onDaySelected: (selectedDay, focusedDay) {
-            setState(() {
-              _selectedDay = selectedDay;
-              _focusedDay = focusedDay;
-              _selectedDaySessions =
-                  _activityService.sessionsForDay(selectedDay);
-            });
-          },
-          onPageChanged: (focusedDay) {
-            _focusedDay = focusedDay;
-            _loadActivityData();
-          },
+          // Sekcja z sesjami wybranego dnia
+          _buildDaySessionsSection(),
+        ],
+      ),
+    );
+  }
+
+  String _formatSelectedDate() {
+    final day = _selectedDay ?? _focusedDay;
+    final months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return '${months[day.month - 1]} ${day.day}, ${day.year}';
+  }
+
+  Widget _buildDaySessionsSection() {
+    final hasGames = _selectedDaySessions.isNotEmpty;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(16),
+          bottomRight: Radius.circular(16),
         ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Text(
+              _formatSelectedDate(),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ),
+          if (!hasGames)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Text(
+                'No games played this day',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey.shade500,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.only(bottom: 8),
+              itemCount: _selectedDaySessions.length,
+              separatorBuilder: (_, __) => const Divider(height: 1, indent: 56),
+              itemBuilder: (context, index) {
+                final s = _selectedDaySessions[index];
+                final time = TimeOfDay.fromDateTime(s.playedAt).format(context);
+                return ListTile(
+                  dense: true,
+                  leading: CircleAvatar(
+                    radius: 16,
+                    backgroundColor: primaryColor.withValues(alpha: 0.15),
+                    child: Icon(
+                      Icons.videogame_asset_outlined,
+                      size: 18,
+                      color: primaryColor,
+                    ),
+                  ),
+                  title: Text(
+                    '${s.gameType} · $time',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'XP: ${s.xpEarned}  •  Score: ${s.score}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                );
+              },
+            ),
+        ],
       ),
     );
   }
@@ -139,30 +233,91 @@ class _ActivityPageState extends State<ActivityPage> {
     final currentStreak = _activityService.currentStreak;
     final bestStreak = _activityService.bestStreak;
 
-    return  Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: _buildSummaryCard(
-              title: 'XP earned today',
-              value: '$todayXp',
-              subtitle: 'Keep it up!',
-              color: Colors.blue,
-              icon: Icons.bolt_outlined,
-            ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: _buildStreakCard(currentStreak, bestStreak),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildSummaryCard(
+            title: 'Total XP',
+            value: '$todayXp',
+            subtitle: 'Keep it up!',
+            color: Colors.blue,
+            icon: Icons.bolt,
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _buildSummaryCard(
-              title: 'Current streak',
-              value: '$currentStreak',
-              subtitle: 'Best: $bestStreak days',
-              color: Colors.orange,
-              icon: Icons.local_fire_department_outlined,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStreakCard(int currentStreak, int bestStreak) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Ikona ognia z gradientem
+            ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFFFFD600),
+                  Color(0xFFFF9600),
+                  Color(0xFFFF5722),
+                ],
+              ).createShader(bounds),
+              child: const Icon(
+                Icons.local_fire_department,
+                size: 36,
+                color: Colors.white,
+              ),
             ),
-          ),
-        ],
-      );
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Current streak',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$currentStreak',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFFFF9600),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Best: $bestStreak days',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildSummaryCard({
@@ -172,8 +327,6 @@ class _ActivityPageState extends State<ActivityPage> {
     required Color color,
     required IconData icon,
   }) {
-    final theme = Theme.of(context);
-
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -182,10 +335,22 @@ class _ActivityPageState extends State<ActivityPage> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: color.withValues(alpha: 0.12),
-              child: Icon(icon, color: color, size: 20),
+            // Ikona z gradientem jak w streak card
+            ShaderMask(
+              shaderCallback: (bounds) => LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  color.withValues(alpha: 0.7),
+                  color,
+                  color.withValues(alpha: 0.8),
+                ],
+              ).createShader(bounds),
+              child: Icon(
+                icon,
+                size: 36,
+                color: Colors.white,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -197,7 +362,7 @@ class _ActivityPageState extends State<ActivityPage> {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelMedium?.copyWith(
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: Colors.grey.shade700,
                     ),
@@ -205,16 +370,17 @@ class _ActivityPageState extends State<ActivityPage> {
                   const SizedBox(height: 4),
                   Text(
                     value,
-                    style: theme.textTheme.headlineSmall?.copyWith(
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: color,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Colors.grey.shade600,
                     ),
                   ),
@@ -308,30 +474,6 @@ class _ActivityPageState extends State<ActivityPage> {
       ),
     );
   }
-
-  Widget _buildDaySessionsList() {
-    if (_selectedDaySessions.isEmpty) {
-      return const  Text('No games on this day yet.');
-    }
-
-    return Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _selectedDaySessions.length,
-          separatorBuilder: (_, _) => const Divider(height: 1),
-          itemBuilder: (context, index) {
-            final s = _selectedDaySessions[index];
-            final time = TimeOfDay.fromDateTime(s.playedAt).format(context);
-            return ListTile(
-              leading: const Icon(Icons.videogame_asset_outlined),
-              title: Text('${s.gameType} · $time'),
-              subtitle: Text('XP: ${s.xpEarned}  •  Score: ${s.score}'),
-            );
-          },
-        ),
-      );
-  }
 }
+
+
