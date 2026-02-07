@@ -127,9 +127,51 @@ class GameService {
   }
 
   GameQuestion _generateQuestion() {
-    final a = _random.nextInt(10);
-    final b = _random.nextInt(10);
     final op = MathOperation.values[_random.nextInt(MathOperation.values.length)];
+
+    int a;
+    int b = 0;
+
+    switch (op) {
+      case MathOperation.squareRoot:
+        // Generuj liczbę która jest kwadratem (1, 4, 9, 16, 25, 36, 49, 64, 81, 100)
+        final base = _random.nextInt(10) + 1; // 1-10
+        a = base * base;
+        break;
+      case MathOperation.cubeRoot:
+        // Generuj liczbę która jest sześcianem (1, 8, 27, 64, 125)
+        final base = _random.nextInt(5) + 1; // 1-5
+        a = base * base * base;
+        break;
+      case MathOperation.divide:
+        // Upewnij się że dzielenie daje wynik całkowity
+        final range = mathOperationRanges[op]!;
+        b = _random.nextInt(9) + 1; // 1-9 (unikaj dzielenia przez 0)
+        final maxQuotient = range.$2 ~/ b;
+        final quotient = _random.nextInt(maxQuotient.clamp(1, 10)) + 1;
+        a = b * quotient;
+        break;
+      case MathOperation.power0:
+      case MathOperation.power1:
+      case MathOperation.power2:
+      case MathOperation.power3:
+        // Potęgi: tylko liczba A
+        a = _random.nextInt(10) + 1; // 1-10
+        break;
+      default:
+        // Standardowe operacje (add, subtract, multiply) - użyj mathOperationRanges
+        final range = mathOperationRanges[op];
+        if (range != null) {
+          final min = range.$1;
+          final max = range.$2;
+          a = _random.nextInt(max - min + 1) + min;
+          b = _random.nextInt(max - min + 1) + min;
+        } else {
+          a = _random.nextInt(10);
+          b = _random.nextInt(10);
+        }
+    }
+
     return GameQuestion(a: a, b: b, operation: op);
   }
 
@@ -144,13 +186,18 @@ class GameService {
         return a * b;
       case MathOperation.divide:
         return b != 0 ? a ~/ b : 0;
-      case MathOperation.power:
-        // Keep constraints simple (single-digit base/exponent).
-        return pow(a, b).toInt();
-      case MathOperation.root:
-        // Integer square root (floor). For b, we ignore and root 'a'.
-        // This keeps the existing enum usable without breaking UI.
+      case MathOperation.power0:
+        return 1; // a^0 = 1
+      case MathOperation.power1:
+        return a; // a^1 = a
+      case MathOperation.power2:
+        return a * a; // a^2
+      case MathOperation.power3:
+        return a * a * a; // a^3
+      case MathOperation.squareRoot:
         return sqrt(a).floor();
+      case MathOperation.cubeRoot:
+        return pow(a, 1 / 3).round();
     }
   }
 }

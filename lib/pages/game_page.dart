@@ -9,6 +9,7 @@ import 'package:matem_appka/services/xp_service.dart';
 import 'package:matem_appka/services/activity_service.dart';
 import 'package:matem_appka/services/game_service.dart';
 import 'package:matem_appka/pages/widgets/game_header.dart';
+import 'package:matem_appka/pages/widgets/question_display.dart';
 
 import '../const/colors.dart';
 import '../model/game_session.dart';
@@ -89,7 +90,7 @@ class _GamePageState extends State<GamePage> {
         }
       } else if (button == '=') {
         checkResult();
-      } else if (userAnswer.length < 3) {
+      } else if (userAnswer.length < 4) {
         //maximum of 3 numbers can be inputted
         if (userAnswer == '0') {
           userAnswer = button; // replace leading zero
@@ -212,13 +213,16 @@ class _GamePageState extends State<GamePage> {
   }
 
   void gameOver() {
+    if (_isGameOver) return; // Zapobiegaj wielokrotnemu wywołaniu
+    _isGameOver = true;
+
     // Play game over sound when the game ends
     AudioService().playGameOverSound();
     _isResultDialogVisible = true;
     _onResultDialogConfirm = () {
       _isResultDialogVisible = false;
       gameEnd();
-      Navigator.pushNamed(context, '/home');
+      Navigator.pushReplacementNamed(context, '/home');
     };
     showDialog(
       context: context,
@@ -231,7 +235,7 @@ class _GamePageState extends State<GamePage> {
           onTap: () {
             _isResultDialogVisible = false;
             gameEnd();
-            Navigator.pushNamed(context, '/home');
+            Navigator.pushReplacementNamed(context, '/home');
           },
           icon: Icons.hourglass_bottom,
           accentColor: Colors.yellow
@@ -258,6 +262,9 @@ class _GamePageState extends State<GamePage> {
   }
 
   Stream<int> timerStream = Stream.empty();
+
+  // Flaga do śledzenia czy gra się zakończyła
+  bool _isGameOver = false;
 
   void goToNextQuestion() {
     //dissmiss alert dialog
@@ -359,101 +366,11 @@ class _GamePageState extends State<GamePage> {
               ),
               Expanded(
                 child: Center(
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    constraints: const BoxConstraints(maxWidth: 520),
-                    decoration: BoxDecoration(
-                      // LCD-like background
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          const Color(0xFFE7F2E6),
-                          const Color(0xFFCFE3CF),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.black.withValues(alpha: 0.35), width: 1.5),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.25),
-                          blurRadius: 10,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                  child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                    children: [
-                        // Bezel line
-                        Container(
-                          height: 2,
-                          width: double.infinity,
-                          margin: const EdgeInsets.only(bottom: 10),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.18),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      Row(
-                          // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                            Expanded(
-                              child: Text(
-                            '$numberA ${mathOperations[operation]} $numberB = ',
-                                style: segment14TextStyle.copyWith(
-                                  color: const Color(0xFF1B2A1B),
-                                  letterSpacing: 1.2,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                          ),
-                            ),
-                            const SizedBox(width: 4),
-                          Container(
-                              height: 54,
-                              width: 120,
-                              padding: const EdgeInsets.symmetric(horizontal: 10),
-                            decoration: BoxDecoration(
-                                color: const Color(0xFF0F1A0F).withValues(alpha: 0.10),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: Colors.black.withValues(alpha: 0.35),
-                                  width: 1,
-                                ),
-                            ),
-                              alignment: Alignment.centerRight,
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: Alignment.centerRight,
-                                child: Text(
-                                  userAnswer.isEmpty ? '0' : userAnswer,
-                                  style: segment7TextStyle.copyWith(
-                                    color: const Color(0xFF0F2A0F),
-                                    letterSpacing: 2.0,
-                                  ),
-                                  maxLines: 1,
-                                ),
-                            ),
-                          ),
-                        ],
-                      ),
-                        if (operation == MathOperation.divide) ...[
-                          const SizedBox(height: 8),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                          'Give the result without remainder',
-                              style: greyTextStyle.copyWith(
-                                color: Colors.black.withValues(alpha: 0.55),
-                              ),
-                            ),
-                        ),
-                    ],
-                      ],
-                    ),
+                  child: QuestionDisplay(
+                    numberA: numberA,
+                    numberB: numberB,
+                    operation: operation,
+                    userAnswer: userAnswer,
                   ),
                 ),
               ),
@@ -519,8 +436,9 @@ class _GamePageState extends State<GamePage> {
             ),
             TextButton(
               onPressed: () {
-
-                Navigator.pushNamed(context, '/home');
+                _isGameOver = true; // Oznacz grę jako zakończoną
+                Navigator.of(context).pop(); // Zamknij dialog
+                Navigator.pushReplacementNamed(context, '/home');
               },
               child: const Text("Exit"),
             ),

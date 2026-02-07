@@ -69,9 +69,11 @@ class _HomePageState extends State<HomePage> {
         statusBarIconBrightness: Brightness.light, // Android icons
         statusBarBrightness: Brightness.dark, // iOS icons
       ),
-      child: Scaffold(
-        backgroundColor: bgColor,
-        body: SafeArea(
+      child: PopScope(
+        canPop: false, // Blokuj cofanie się z głównego ekranu
+        child: Scaffold(
+          backgroundColor: bgColor,
+          body: SafeArea(
           top: false,
           left: false,
           right: false,
@@ -316,6 +318,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ),
+      ),
       ),
     );
   }
