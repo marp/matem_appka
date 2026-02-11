@@ -66,7 +66,7 @@ class _AboutPageState extends State<AboutPage> {
                   style: TextStyle(fontSize: 16),
                 ),
                 const Text(
-                  'Marcin Przybył',
+                  'Marp',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ],
