@@ -132,7 +132,6 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
         backgroundColor: Colors.deepPurple[700],
         textColor: Colors.white,
         fontWeight: FontWeight.bold,
-        fontSize: 24,
         height: 2.0,
         onTap: () => buttonTapped('='),
       ),

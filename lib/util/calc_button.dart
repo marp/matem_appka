@@ -37,7 +37,7 @@ class _CalcButtonState extends State<CalcButton> with SingleTickerProviderStateM
     // Użyj koloru z modelu lub domyślnego na podstawie typu przycisku
     Color buttonColor = widget.buttonModel.backgroundColor ?? _getDefaultColor();
     Color textColor = widget.buttonModel.textColor ?? Colors.white;
-    double fontSize = widget.buttonModel.fontSize ?? 20;
+    double fontSize = widget.buttonModel.fontSize ?? 26;
     FontWeight fontWeight = widget.buttonModel.fontWeight ?? FontWeight.normal;
 
     return Padding(
