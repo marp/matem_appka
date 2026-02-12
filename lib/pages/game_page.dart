@@ -10,8 +10,8 @@ import 'package:matem_appka/services/activity_service.dart';
 import 'package:matem_appka/services/game_service.dart';
 import 'package:matem_appka/pages/widgets/game_header.dart';
 import 'package:matem_appka/pages/widgets/question_display.dart';
+import 'package:matem_appka/model/calc_button_model.dart';
 
-import '../const/colors.dart';
 import '../model/game_session.dart';
 
 class GamePage extends StatefulWidget {
@@ -22,22 +22,7 @@ class GamePage extends StatefulWidget {
 }
 
 class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin {
-  List<String> numberPad = [
-    '7',
-    '8',
-    '9',
-    'C',
-    '4',
-    '5',
-    '6',
-    '⌫',
-    '1',
-    '2',
-    '3',
-    '=',
-    '0',
-    '+/-',
-  ];
+  late List<CalcButtonModel> numberPad;
 
   // NOTE: state for question/score/mistakes is now in GameService.
   // Removed old fields: numberA, numberB, operation, remainingMistakes, score.
@@ -73,6 +58,101 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
 
   int get remainingMistakes => _gameService.state.remainingMistakes;
   int get score => _gameService.state.score;
+
+  void _initializeButtons() {
+    // Sprawdź czy wynik jest ujemny
+    final correctAnswer = _gameService.state.question.correctAnswer();
+    final bool isNegative = correctAnswer < 0;
+
+    numberPad = [
+      CalcButtonModel(
+        text: '7',
+        type: ButtonType.number,
+        onTap: () => buttonTapped('7'),
+      ),
+      CalcButtonModel(
+        text: '8',
+        type: ButtonType.number,
+        onTap: () => buttonTapped('8'),
+      ),
+      CalcButtonModel(
+        text: '9',
+        type: ButtonType.number,
+        onTap: () => buttonTapped('9'),
+      ),
+      CalcButtonModel(
+        text: 'C',
+        type: ButtonType.clear,
+        backgroundColor: Colors.red[600],
+        textColor: Colors.white,
+        fontWeight: FontWeight.bold,
+        onTap: () => buttonTapped('C'),
+      ),
+      CalcButtonModel(
+        text: '4',
+        type: ButtonType.number,
+        onTap: () => buttonTapped('4'),
+      ),
+      CalcButtonModel(
+        text: '5',
+        type: ButtonType.number,
+        onTap: () => buttonTapped('5'),
+      ),
+      CalcButtonModel(
+        text: '6',
+        type: ButtonType.number,
+        onTap: () => buttonTapped('6'),
+      ),
+      CalcButtonModel(
+        text: '⌫',
+        type: ButtonType.action,
+        backgroundColor: Colors.orange[600],
+        textColor: Colors.white,
+        fontWeight: FontWeight.bold,
+        onTap: () => buttonTapped('⌫'),
+      ),
+      CalcButtonModel(
+        text: '1',
+        type: ButtonType.number,
+        onTap: () => buttonTapped('1'),
+      ),
+      CalcButtonModel(
+        text: '2',
+        type: ButtonType.number,
+        onTap: () => buttonTapped('2'),
+      ),
+      CalcButtonModel(
+        text: '3',
+        type: ButtonType.number,
+        onTap: () => buttonTapped('3'),
+      ),
+      CalcButtonModel(
+        text: '=',
+        type: ButtonType.operation,
+        backgroundColor: Colors.deepPurple[700],
+        textColor: Colors.white,
+        fontWeight: FontWeight.bold,
+        fontSize: 24,
+        height: 2.0,
+        onTap: () => buttonTapped('='),
+      ),
+      CalcButtonModel(
+        text: '0',
+        type: ButtonType.number,
+        onTap: () => buttonTapped('0'),
+      ),
+      // Dodaj przycisk +/- tylko jeśli wynik jest ujemny
+      if (isNegative)
+        CalcButtonModel(
+          text: '+/-',
+          type: ButtonType.action,
+          backgroundColor: Colors.grey[700],
+          textColor: Colors.white,
+          fontSize: 16,
+          onTap: () => buttonTapped('+/-'),
+        ),
+    ];
+  }
 
   void buttonTapped(String button) {
     setState(() {
@@ -130,7 +210,8 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
 
     // Digits 0-9 (also from numpad) => same as pressing number buttons
     if (keyLabel.length == 1 && '0123456789'.contains(keyLabel)) {
-      if (numberPad.contains(keyLabel)) {
+      final buttonExists = numberPad.any((button) => button.text == keyLabel);
+      if (buttonExists) {
         buttonTapped(keyLabel);
         return KeyEventResult.handled;
       }
@@ -153,7 +234,8 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
     if (logicalKey == LogicalKeyboardKey.minus ||
         logicalKey == LogicalKeyboardKey.numpadSubtract ||
         keyLabel == '-') {
-      if (numberPad.contains('+/-')) {
+      final buttonExists = numberPad.any((button) => button.text == '+/-');
+      if (buttonExists) {
         buttonTapped('+/-');
         return KeyEventResult.handled;
       }
@@ -179,6 +261,7 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
       setState(() {
         userAnswer = '';
         _gameService.nextQuestion();
+        _initializeButtons(); // Zaktualizuj przyciski dla nowego pytania
       });
       return;
     }
@@ -289,6 +372,7 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
     setState(() {
       userAnswer = '';
       _gameService.nextQuestion();
+      _initializeButtons(); // Zaktualizuj przyciski dla nowego pytania
     });
   }
 
@@ -308,6 +392,7 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
     BackButtonInterceptor.add(myInterceptor, context: context);
 
     _gameService = GameService();
+
 
     // Inicjalizacja animacji błysku
     _flashController = AnimationController(
@@ -343,6 +428,9 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
     }
 
     _gameService.start(mode: mode);
+
+    // Inicjalizacja przycisków po start() żeby state był dostępny
+    _initializeButtons();
 
     if (mode == GameMode.practice) {
       timerStream = Stream.empty();
@@ -415,9 +503,7 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
                                 crossAxisCount: 4),
                         itemBuilder: (context, index) {
                           return CalcButton(
-                            child: numberPad[index],
-                            onTap: () => buttonTapped(numberPad[index]),
-                            height: numberPad[index] == '=' ? 2.0 : 1.0,
+                            buttonModel: numberPad[index],
                           );
                         },
                       ),

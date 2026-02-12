@@ -16,7 +16,7 @@ class QuestionDisplay extends StatelessWidget {
   final MathOperation operation;
   final String userAnswer;
 
-  // Zwraca wykładnik potęgi jako normalną liczbę
+  // Returns the exponent as a string for power operations, or null for non-power operations.
   String? _getExponent() {
     switch (operation) {
       case MathOperation.power0:
@@ -48,48 +48,57 @@ class QuestionDisplay extends StatelessWidget {
     // Dla pierwiastków: symbol przed liczbą (√A, ∛A)
     if (_isRootOperation()) {
       final symbol = mathOperations[operation] ?? '?';
-      return Text(
-        '$symbol$numberA = ',
-        style: baseStyle,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+      return FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text(
+          '$symbol$numberA = ',
+          style: baseStyle,
+          maxLines: 1,
+        ),
       );
     }
 
     // Dla potęg: liczba z górnym indeksem (A^n)
     if (_isPowerOperation()) {
       final exponent = _getExponent()!;
-      return RichText(
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        text: TextSpan(
-          style: baseStyle,
-          children: [
-            TextSpan(text: '$numberA'),
-            WidgetSpan(
-              alignment: PlaceholderAlignment.top,
-              child: Transform.translate(
-                offset: const Offset(0, -10),
-                child: Text(
-                  exponent,
-                  style: baseStyle.copyWith(
-                    fontSize: (baseStyle.fontSize ?? 24) * 0.6,
+      return FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: RichText(
+          maxLines: 1,
+          text: TextSpan(
+            style: baseStyle,
+            children: [
+              TextSpan(text: '$numberA'),
+              WidgetSpan(
+                alignment: PlaceholderAlignment.top,
+                child: Transform.translate(
+                  offset: const Offset(0, -10),
+                  child: Text(
+                    exponent,
+                    style: baseStyle.copyWith(
+                      fontSize: (baseStyle.fontSize ?? 24) * 0.6,
+                    ),
                   ),
                 ),
               ),
-            ),
-            const TextSpan(text: ' = '),
-          ],
+              const TextSpan(text: ' = '),
+            ],
+          ),
         ),
       );
     }
 
     // Standardowe operacje: A op B =
-    return Text(
-      '$numberA ${mathOperations[operation]} $numberB = ',
-      style: baseStyle,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Text(
+        '$numberA ${mathOperations[operation]} $numberB = ',
+        style: baseStyle,
+        maxLines: 1,
+      ),
     );
   }
 

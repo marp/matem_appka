@@ -1,18 +1,13 @@
 import 'package:flutter/material.dart';
 
-import '../const/colors.dart';
+import '../model/calc_button_model.dart';
 
 class CalcButton extends StatefulWidget {
-  final String child;
-  final VoidCallback onTap;
-
-  final double height;
+  final CalcButtonModel buttonModel;
 
   const CalcButton({
     super.key,
-    required this.child,
-    required this.onTap,
-    this.height = 1,
+    required this.buttonModel,
   });
 
   @override
@@ -39,25 +34,21 @@ class _CalcButtonState extends State<CalcButton> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    var buttonColor = Colors.deepPurple[400];
-
-    if (widget.child == 'C') {
-      buttonColor = Colors.red;
-    } else if (widget.child == '⌫') {
-      buttonColor = Colors.green;
-    } else if (widget.child == '=') {
-      buttonColor = Colors.deepPurple;
-    }
+    // Użyj koloru z modelu lub domyślnego na podstawie typu przycisku
+    Color buttonColor = widget.buttonModel.backgroundColor ?? _getDefaultColor();
+    Color textColor = widget.buttonModel.textColor ?? Colors.white;
+    double fontSize = widget.buttonModel.fontSize ?? 20;
+    FontWeight fontWeight = widget.buttonModel.fontWeight ?? FontWeight.normal;
 
     return Padding(
         padding: const EdgeInsets.all(8.0),
         child: GestureDetector(
         onTap: () {
           _controller.forward();
-          Future.delayed(const Duration(milliseconds: 150), () {
+          Future.delayed(const Duration(milliseconds: 50), () {
             _controller.reverse();
           });
-          widget.onTap();
+          widget.buttonModel.onTap?.call();
         },
         child: ScaleTransition(
           scale: Tween<double>(
@@ -65,16 +56,43 @@ class _CalcButtonState extends State<CalcButton> with SingleTickerProviderStateM
             end: 0.9,
           ).animate(_controller),
           child: Container(
-            height: 56.0 * widget.height,
+            height: 56.0 * widget.buttonModel.height,
               decoration: BoxDecoration(
               color: buttonColor,
               borderRadius: BorderRadius.circular(4),
             ),
               child: Center(
-              child: Text(widget.child, style: whiteTextStyle),
+              child: widget.buttonModel.icon != null
+                ? Icon(
+                    widget.buttonModel.icon,
+                    color: textColor,
+                    size: fontSize,
+                  )
+                : Text(
+                    widget.buttonModel.text,
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: fontSize,
+                      fontWeight: fontWeight,
+                    ),
+                  ),
             ),
           ),
         ),)
     );
+  }
+
+  Color _getDefaultColor() {
+    switch (widget.buttonModel.type) {
+      case ButtonType.clear:
+        return Colors.red;
+      case ButtonType.action:
+        return Colors.green;
+      case ButtonType.operation:
+        return Colors.deepPurple;
+      case ButtonType.number:
+      default:
+        return Colors.deepPurple[400] ?? Colors.deepPurple;
+    }
   }
 }
