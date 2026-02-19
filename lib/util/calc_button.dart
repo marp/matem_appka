@@ -40,8 +40,11 @@ class _CalcButtonState extends State<CalcButton> with SingleTickerProviderStateM
     double fontSize = widget.buttonModel.fontSize ?? 26;
     FontWeight fontWeight = widget.buttonModel.fontWeight ?? FontWeight.normal;
 
+    Offset distance = Offset(5, 5);
+    double blur = 0.0;
+
     return Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(10.0),
         child: GestureDetector(
         onTap: () {
           _controller.forward();
@@ -59,7 +62,14 @@ class _CalcButtonState extends State<CalcButton> with SingleTickerProviderStateM
             height: 56.0 * widget.buttonModel.height,
               decoration: BoxDecoration(
               color: buttonColor,
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    offset: distance,
+                    blurRadius: blur,
+                    color: buttonColor.withValues(alpha: 0.75),
+                  )
+                ]
             ),
               child: Center(
               child: widget.buttonModel.icon != null
