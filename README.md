@@ -11,6 +11,11 @@ A simple Flutter game that helps children practice math through short, interacti
    - `flutter build ios` to build the iOS app
    - `flutter build web` to build the web app
 
+## To do
+- [ ] Create a summary screen after game end
+- [ ] Dynamic font size in calc_widget
+- [ ] Find or create better sound effects
+
 ## Credits
 Music
 - [Roshan Cariappa from **Pixabay**](https://pixabay.com/users/roshan_cariappa-29316619/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=117375)
