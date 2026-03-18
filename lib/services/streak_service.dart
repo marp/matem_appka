@@ -17,6 +17,13 @@ class StreakService {
   int get bestStreak => _bestStreak;
   String? get lastPlayedDate => _lastPlayedDate;
 
+  bool hasPlayedToday() {
+    if (_lastPlayedDate == null) return false;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return _lastPlayedDate == _formatDate(today);
+  }
+
   Future<void> initialize() async {
     final prefs = await SharedPreferences.getInstance();
     _currentStreak = prefs.getInt(_kCurrentStreakKey) ?? 0;

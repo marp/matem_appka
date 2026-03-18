@@ -8,9 +8,11 @@ import 'package:matem_appka/services/audio_service.dart';
 import 'package:matem_appka/services/xp_service.dart';
 import 'package:matem_appka/services/activity_service.dart';
 import 'package:matem_appka/services/game_service.dart';
+import 'package:matem_appka/services/streak_service.dart';
 import 'package:matem_appka/pages/widgets/game_header.dart';
 import 'package:matem_appka/pages/widgets/question_display.dart';
 import 'package:matem_appka/model/calc_button_model.dart';
+import 'package:matem_appka/pages/summary_page.dart';
 
 import '../model/game_session.dart';
 
@@ -276,7 +278,7 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
       timerStream = Stream.empty();
       // ensure UI picks up remainingMistakes/score changes
       setState(() {});
-      gameOver();
+      endGame(isGameOver: true);
       return;
     }
 
@@ -307,39 +309,43 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
     setState(() {});
   }
 
-  void gameOver() {
-    if (_isGameOver) return; // Zapobiegaj wielokrotnemu wywołaniu
-    _isGameOver = true;
+  Future<void> endGame({bool isGameOver = false}) async {
+    if (_gameEnded) return; // Prevent multiple calls
+    _gameEnded = true;
 
-    // Play game over sound when the game ends
-    AudioService().playGameOverSound();
-    _isResultDialogVisible = true;
-    _onResultDialogConfirm = () {
-      _isResultDialogVisible = false;
-      gameEnd();
-      Navigator.pushReplacementNamed(context, '/home');
-    };
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return ResultMessage(
-          message: 'End of the game',
-          subtitle: 'Your score: $score',
-          buttonText: 'Back to Home',
-          onTap: () {
-            _isResultDialogVisible = false;
-            gameEnd();
-            Navigator.pushReplacementNamed(context, '/home');
-          },
-          icon: Icons.hourglass_bottom,
-          accentColor: Colors.yellow
-        );
-      },
+    final bool canCompleteLesson = !isGameOver && mode != GameMode.practice;
+    final bool hadPlayedToday = StreakService().hasPlayedToday();
+
+    if (isGameOver) {
+      AudioService().playGameOverSound();
+    } else {
+      // Award XP/session only for completed (non-practice) lessons.
+      await gameEnd();
+    }
+
+    final bool streakExtended = canCompleteLesson && !hadPlayedToday;
+
+    final state = _gameService.state;
+    final correctAnswers = state.score;
+    final incorrectAnswers = state.initialMistakes - state.remainingMistakes;
+
+    if (!mounted) return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SummaryPage(
+          score: score,
+          correctAnswers: correctAnswers,
+          incorrectAnswers: incorrectAnswers,
+          isGameOver: isGameOver,
+          streakExtended: streakExtended,
+        ),
+      ),
     );
   }
 
-  void gameEnd() async {
+  Future<void> gameEnd() async {
     if (mode != GameMode.practice) {
       // HighScore(username: "You", score: score).save();
       await XpService().addXp(score);
@@ -358,8 +364,8 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
 
   Stream<int> timerStream = Stream.empty();
 
-  // Flaga do śledzenia czy gra się zakończyła
-  bool _isGameOver = false;
+  // Flag to track if the game has ended (either by game over or time up)
+  bool _gameEnded = false;
 
   void goToNextQuestion() {
     //dissmiss alert dialog
@@ -478,7 +484,7 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
                     remainingMistakes: remainingMistakes,
                     score: score,
                     onExit: _showExitConfirmDialog,
-                    onTimeExpired: gameOver,
+                    onTimeExpired: () => endGame(isGameOver: false),
                   ),
                   Expanded(
                     child: Center(
@@ -564,8 +570,8 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
             ),
             TextButton(
               onPressed: () {
-                _isGameOver = true; // Oznacz grę jako zakończoną
-                Navigator.of(context).pop(); // Zamknij dialog
+                _gameEnded = true; // Mark game as ended
+                Navigator.of(context).pop(); // Close the dialog
                 Navigator.pushReplacementNamed(context, '/home');
               },
               child: const Text("Exit"),
@@ -578,3 +584,4 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
     });
   }
 }
+

@@ -23,12 +23,14 @@ class GameState {
   final GameQuestion question;
   final int remainingMistakes;
   final int score;
+  final int initialMistakes;
 
   const GameState({
     required this.mode,
     required this.question,
     required this.remainingMistakes,
     required this.score,
+    required this.initialMistakes,
   });
 
   GameState copyWith({
@@ -36,12 +38,14 @@ class GameState {
     GameQuestion? question,
     int? remainingMistakes,
     int? score,
+    int? initialMistakes,
   }) {
     return GameState(
       mode: mode ?? this.mode,
       question: question ?? this.question,
       remainingMistakes: remainingMistakes ?? this.remainingMistakes,
       score: score ?? this.score,
+      initialMistakes: initialMistakes ?? this.initialMistakes,
     );
   }
 }
@@ -83,6 +87,7 @@ class GameService {
       question: _generateQuestion(),
       remainingMistakes: initialMistakes,
       score: 0,
+      initialMistakes: initialMistakes,
     );
   }
 

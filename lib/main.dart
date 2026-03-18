@@ -10,6 +10,7 @@ import 'package:matem_appka/pages/highscores_page.dart';
 import 'package:matem_appka/pages/home_page.dart';
 import 'package:matem_appka/pages/settings_page.dart';
 import 'package:matem_appka/pages/welcome_page.dart';
+import 'package:matem_appka/pages/summary_page.dart';
 import 'package:matem_appka/services/audio_service.dart';
 import 'package:matem_appka/services/streak_service.dart';
 import 'package:matem_appka/services/xp_service.dart';
@@ -135,6 +136,7 @@ class MyApp extends StatelessWidget {
         '/dev/index': (context) => const DevIndexPage(),
         '/dev/sessions': (context) => const DevSessionsPage(),
         '/dev/reminders': (context) => const DevRemindersPage(),
+        '/summary': (context) => const SummaryPage(score: 0, correctAnswers: 0, incorrectAnswers: 0, isGameOver: false, streakExtended: false), // Placeholder
       },
     );
   }
